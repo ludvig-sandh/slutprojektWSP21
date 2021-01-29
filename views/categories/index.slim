@@ -1,0 +1,7 @@
+h2 Alla kategorier:
+
+ul
+- categories.each do |cat|
+    section
+        li = cat["name"]
+        a href="/categories/:#{cat["id"]}" Visa
