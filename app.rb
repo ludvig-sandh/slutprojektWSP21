@@ -3,6 +3,8 @@ require 'slim'
 require 'sqlite3'
 require 'bcrypt'
 
+enable :sessions
+
 #1. Skapa ER + databas som kan hålla användare och tider. Fota ER-diagram, 
 #   lägg i misc-mapp
 #2. Skapa ett formulär för att registrerara användare.
@@ -19,10 +21,31 @@ def connect_to_db()
     db.results_as_hash = true
     return db
 end
-   
+
+message = ""
+link_text = ""
+def get_user_id()
+    #SÅLÄNGE BARA:
+    return -1
+    user_id = session[:user_id]
+    if user_id == nil
+        message = "Du har loggats ut automatiskt efter en viss tid."
+        link_text = "Logga in igen"
+        redirect('/error')
+        return
+    end
+    return user_id
+end
+
+def check_logged_in()
+    get_user_id()
+end
 
 
-enable :sessions
+#NÄSTA GÅNG V.6: Lägg till den funktionen som gör att
+#koden i den körs innan varje route (se om inloggad)
+
+
 
 get('/') do
     redirect('/home')
@@ -43,7 +66,27 @@ get('/categories/') do
 end
 
 get('/categories/:id') do
+    category_id = params[:id]
     #Här visar vi alla tider för en viss kategori
     #Vi struntar i times/index eftersom detta fungerar som samma sak nästan
     #Nästa gång: FIXA KONTON, LOGGA IN/REGISTRERA. Sedan: Fixa allt med kategorier så att det går att lägga till /ta bort / redigera
+    db = connect_to_db()
+    times = db.execute('SELECT * From Times WHERE category_id = ?', category_id)
+    slim(:"categories/show", locals: {times: times})
+end
+
+get('/categories/new') do
+    slim(:"categories/new")
+end
+
+post('/categories') do
+    kategoriNamn = session[:namn]
+    #Kolla att det inte redan finns en kategori med detta namn sen
+
+
+    user_id = get_user_id()
+
+    db = connect_to_db()
+    db.execute('INSERT INTO Categories (name, user_id) VALUES (?, ?)', kategoriNamn, user_id)
+
 end

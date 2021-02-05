@@ -1,7 +1,9 @@
-h2 Alla kategorier:
+h2 Alla tider:
 
 ul
-- categories.each do |cat|
+- times.each do |time|
     section
-        li cat[:name]
-        a href="/categories/:#{cat[:id]}"
+        li = time[:time]
+        p = time[:date]
+        p = time[:user_id]
+        a href="/categories/:#{cat[:id]}" Visa
