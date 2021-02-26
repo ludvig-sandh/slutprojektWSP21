@@ -1,9 +1,8 @@
 h2 Alla kategorier:
 
-a href="categories/new" Create new category
+a href="categories/new" Skapa en ny kategori
 
 ul
 - categories.each do |cat|
     section
-        li = cat["name"]
-        a href="/categories/:#{cat["id"]}" Visa
+        a href="/categories/#{cat["id"]}" = cat["name"]

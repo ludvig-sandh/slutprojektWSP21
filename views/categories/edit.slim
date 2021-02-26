@@ -1,5 +1,8 @@
 h2 Redigera din kategori
 
-form action="/categories/:id/update" method="post"
-    input type="text" name="new_name" placeholder="#{kategorinamn}"
+form action="/categories/#{category["id"]}/update" method="post"
+    input type="text" name="new_name" placeholder="#{category["name"]}"
     input type="submit" value="Ändra"/
+
+form action="/categories/#{category["id"]}/delete" method="post"
+    input type="submit" value="Radera"/

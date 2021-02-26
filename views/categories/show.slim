@@ -1,3 +1,8 @@
+h2 = cat["name"]
+
+a href="/categories/#{cat["id"]}/edit" = "Redigera"
+a href="/times/#{cat["id"]}/new" = "Lägg till tid"
+
 h2 Alla tider:
 
 ul
@@ -6,4 +11,3 @@ ul
         li = time[:time]
         p = time[:date]
         p = time[:user_id]
-        a href="/categories/:#{cat[:id]}" Visa

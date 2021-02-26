@@ -18,9 +18,6 @@ enable :sessions
 
 
 
-#NÄSTA GÅNG V.6: Lägg till den funktionen som gör att
-#koden i den körs innan varje route (se om inloggad)
-
 
 #Övriga routes
 get('/') do
@@ -50,9 +47,11 @@ end
 
 #Categories
 get('/categories') do
+    #Koppling till databasen, och hämta alla kategorier
     db = connect_to_db()
     categories = db.execute('SELECT * From Categories')
-    p categories
+    
+    #Visa dem för användaren
     slim(:"categories/index", locals: {categories: categories})
 end
 
@@ -71,26 +70,45 @@ get('/categories/:id') do
     #Hämta alla tider som finns sparade för denna kategorin
     db = connect_to_db()
     times = db.execute('SELECT * From Times WHERE category_id = ?', category_id)
-    
+    cat = db.execute('SELECT * From Categories WHERE id = ?', category_id).first
+
     #Visa dem för användaren
-    slim(:"categories/show", locals: {times: times})
+    slim(:"categories/show", locals: {times: times, cat: cat})
 end
 
 get('/categories/:id/edit') do
-    #slim(:"categories/edit", locals: )
-end
-
-post('/categories/:id/update') do
+    #Hämta kategori-id som vi hanterar (från parametrar)
     category_id = params[:id]
     
-    #Hämta användar-id: (bara inloggade användare får ändra på en bild)
+    #Hämta användar-id: (bara inloggade användare får ändra på en kategori)
     user_id = get_user_id()
     
     #Hämta user_id för den som äger denna kategorin
     db = connect_to_db()
-    owner_id = db.execute('SELECT user_id From Categories WHERE id = ?', category_id)
+    category = db.execute('SELECT * From Categories WHERE id = ?', category_id).first
+    owner_id = category["user_id"]
 
-    #Dessutom är det naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
+    #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
+    if user_id != owner_id
+        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Hem")
+    else
+        slim(:"categories/edit", locals: {category: category})
+    end
+end
+
+post('/categories/:id/update') do
+    #Hämta kategori-id som vi hanterar (från parametrar)
+    category_id = params[:id]
+    
+    #Hämta användar-id: (bara inloggade användare får ändra på en kategori)
+    user_id = get_user_id()
+    
+    #Hämta user_id för den som äger denna kategorin
+    db = connect_to_db()
+    owner = db.execute('SELECT user_id From Categories WHERE id = ?', category_id).first
+    owner_id = owner["user_id"]
+
+    #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
     if user_id != owner_id
         show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Hem")
     end
@@ -102,9 +120,36 @@ post('/categories/:id/update') do
     if kategorinamn_accepted?(new_cat_name)
 
         #Lägg in kategorin i databasen, och omdirigera användaren till kategorisidan
-        db.execute('UPDATE Categories SET name = ? WHERE category_id = ?', new_cat_name, category_id)
-        redirect('/categories/:id')
+        db.execute('UPDATE Categories SET name = ? WHERE id = ?', new_cat_name, category_id)
+
+        #Skicka tillbaka användaren till kategorilistan
+        redirect("/categories/#{category_id}")
     end
+end
+
+post('/categories/:id/delete') do
+    #Hämta kategori-id som vi hanterar (från parametrar)
+    category_id = params[:id]
+    
+    #Hämta användar-id: (bara inloggade användare får ändra på en kategori)
+    user_id = get_user_id()
+    
+    #Hämta user_id för den som äger denna kategorin
+    db = connect_to_db()
+    owner = db.execute('SELECT user_id From Categories WHERE id = ?', category_id).first
+    owner_id = owner["user_id"]
+
+    #Det är naturligtvis bara den som skapat (äger) denna kategorin som får radera den
+    if user_id != owner_id
+        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte radera en kategori som någon annan äger", "Hem")
+    else
+        #Vi raderar kategorin, samt alla tider som hör till denna kategorin
+        db.execute("DELETE FROM Categories WHERE id=?", category_id)
+        db.execute("DELETE FROM Times WHERE category_id = ?", category_id)
+    end
+    
+    #Skicka tillbaka användaren till kategorilistan
+    redirect("/categories")
 end
 
 post('/categories') do
@@ -112,18 +157,38 @@ post('/categories') do
     user_id = get_user_id()
 
     #Hämta data från formuläret
-    kategoriNamn = params[:namn]
+    kategorinamn = params[:name]
 
     #Kontrollera att kategorinamnet är tillåtet
-    if kategorinamn_accepted?(kategoriNamn)
+    if kategorinamn_accepted?(kategorinamn)
 
         #Lägg in kategorin i databasen, och omdirigera användaren till kategorisidan
-        db.execute('INSERT INTO Categories (name, user_id) VALUES (?, ?)', kategoriNamn, user_id)
+        db = connect_to_db()
+        db.execute('INSERT INTO Categories (name, user_id) VALUES (?, ?)', kategorinamn, user_id)
         redirect('/categories')
     end
 end
 
+#Times
+get('/times/:id/new') do
+    #Detta får bara inloggade användare göra
+    check_logged_in()
+
+    #Hämta vilket kategori-id som användaren vill lägga till en tid för
+    category_id = params[:id]
+
+    #Hämta kategorinamnet för denna kategorin
+    db = connect_to_db()
+    category = db.execute('SELECT * From Categories WHERE id = ?', category_id).first
+
+    #Visa formuläret för den som är inloggad
+    slim(:"times/new", locals: {category: category})
+end
+
+
+
+
+
+
 #Users
 
-
-#Times
