@@ -31,13 +31,15 @@ end
 get('/error') do
     message = session[:message]
     link_text = session[:link_text]
-    if message == nil || link_text == nil
+    link = session[:link]
+    if message == nil || link_text == nil || link == nil
         #Om det i framtiden läggs till flera error-hanterare och man missar att
         #specifiera en beskrivning av felmeddelandet så visas detta som default
         message = "Det har uppstått ett fel, vänligen kontakta Ludvig Sandh."
         link_text = "Hem"
+        link = "/home"
     end
-    slim(:"helper/error", locals: {message: message, link_text: link_text})
+    slim(:"helper/error", locals: {message: message, link_text: link_text, link: link})
 end
 
 before do
@@ -90,7 +92,7 @@ get('/categories/:id/edit') do
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
     if user_id != owner_id
-        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Hem")
+        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorier", "/categories/#{category_id}")
     else
         slim(:"categories/edit", locals: {category: category})
     end
@@ -110,7 +112,7 @@ post('/categories/:id/update') do
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
     if user_id != owner_id
-        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Hem")
+        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorier", "/categories/#{category_id}")
     end
     
     #Användaren är authorized. Hämta datan, dvs det nya namnet på kategorin, från formuläret
@@ -141,7 +143,7 @@ post('/categories/:id/delete') do
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som får radera den
     if user_id != owner_id
-        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte radera en kategori som någon annan äger", "Hem")
+        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte radera en kategori som någon annan äger", "Tillbaka till kategorier", "/categories/:#{category_id}")
     else
         #Vi raderar kategorin, samt alla tider som hör till denna kategorin
         db.execute("DELETE FROM Categories WHERE id=?", category_id)
@@ -170,12 +172,12 @@ post('/categories') do
 end
 
 #Times
-get('/times/:id/new') do
+get('/times/:category_id/new') do
     #Detta får bara inloggade användare göra
     check_logged_in()
 
     #Hämta vilket kategori-id som användaren vill lägga till en tid för
-    category_id = params[:id]
+    category_id = params[:category_id]
 
     #Hämta kategorinamnet för denna kategorin
     db = connect_to_db()
@@ -185,6 +187,29 @@ get('/times/:id/new') do
     slim(:"times/new", locals: {category: category})
 end
 
+#Entiteten "Times" har attributen user_id, category_id, date (datum då tiden skapad), time (själva tiden)
+post('/times/:category_id/new') do
+    #Detta får bara inloggade användare göra
+    user_id = get_user_id()
+
+    #Hämta vilket kategori-id som användaren vill lägga till en tid för
+    category_id = params[:category_id]
+
+    #Hämta tiden som skickats in av användaren
+    hours = params[:hours].to_i
+    mins = params[:minutes].to_i
+    secs = params[:seconds].to_i
+    fracs = params[:fractions].to_i
+    
+    if time_input_accepted?([hours, mins, secs, fracs], category_id)
+        time_string = time_to_string(hours, mins, secs, fracs)
+        
+        date = Time.new
+        date.strftime("%Y-%m-%d %H:%M:%S")
+
+        #Fortsätt här nästa gång, lägg till dbtråd som sparar tiden
+    end
+end
 
 
 

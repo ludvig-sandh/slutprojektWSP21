@@ -1,5 +1,12 @@
 h2 = "Lägg till en ny tid för #{category["name"]}" 
 
 form action="/times/#{category["id"]}/new" method="post"
-    input type="number" name="time" placeholder="HH:MM:SS:mm"
+    p Timmar:
+    input type="number" name="hours" placeholder="HH"
+    p Minuter:
+    input type="number" name="minutes" placeholder="MM"
+    p Sekunder:
+    input type="number" name="seconds" placeholder="SS"
+    p Hundradelar:
+    input type="number" name="fractions" placeholder="mm"
     input type="submit" value="Lägg till"/
