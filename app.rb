@@ -74,6 +74,9 @@ get('/categories/:id') do
     times = db.execute('SELECT * From Times WHERE category_id = ?', category_id)
     cat = db.execute('SELECT * From Categories WHERE id = ?', category_id).first
 
+    #Vi måste ändra så att vi skickar med användarnamnen för varje tid, istället
+    #för användarnas id
+
     #Visa dem för användaren
     slim(:"categories/show", locals: {times: times, cat: cat})
 end
@@ -187,8 +190,29 @@ get('/times/:category_id/new') do
     slim(:"times/new", locals: {category: category})
 end
 
+get('/times/:category_id/:time_id') do
+    #Detta får vem som helst göra
+
+    #Hämta vilket kategori-id som tiden finns i
+    category_id = params[:category_id]
+
+    #Hämta kategorinamnet för denna kategorin
+    db = connect_to_db()
+    category = db.execute('SELECT * From Categories WHERE id = ?', category_id).first
+
+    #Hämta vilket tids-id som tiden har
+    time_id = params[:time_id]
+
+    #Hämta data om denna tiden
+    time = db.execute('SELECT * From Times WHERE id = ?', time_id).first
+
+    #Visa denna tiden i mer detalj
+    #Här vill vi också att vi ska se användarnamnet sen, och inte användar-id:t
+    slim(:"times/show", locals: {cat: category, time: time})
+end
+
 #Entiteten "Times" har attributen user_id, category_id, date (datum då tiden skapad), time (själva tiden)
-post('/times/:category_id/new') do
+post('/times/:category_id') do
     #Detta får bara inloggade användare göra
     user_id = get_user_id()
 
@@ -204,11 +228,41 @@ post('/times/:category_id/new') do
     if time_input_accepted?([hours, mins, secs, fracs], category_id)
         time_string = time_to_string(hours, mins, secs, fracs)
         
-        date = Time.new
-        date.strftime("%Y-%m-%d %H:%M:%S")
+        date = Time.now.strftime("%A, %B %d %Y - %k:%M:%S")
 
-        #Fortsätt här nästa gång, lägg till dbtråd som sparar tiden
+        #lägg till dbtråd som sparar tiden
+        db = connect_to_db()
+        db.execute('INSERT INTO Times (time, date, category_id, user_id) VALUES (?, ?, ?, ?)', time_string, date, category_id, user_id)
     end
+
+    redirect("/categories/#{category_id}")
+end
+
+post('/times/:category_id/:time_id/delete') do
+    #Hämta tids-id som vi hanterar (från parametrar)
+    time_id = params[:time_id]
+
+    #Hämta kategori-id:t
+    category_id = params[:category_id]
+    
+    #Hämta användar-id: (bara inloggade användare får ändra på en kategori)
+    user_id = get_user_id()
+    
+    #Hämta user_id för den som äger denna tiden
+    db = connect_to_db()
+    owner = db.execute('SELECT user_id From Times WHERE id = ?', time_id).first
+    owner_id = owner["user_id"]
+
+    #Det är naturligtvis bara den som skapat (äger) denna tiden som får radera den
+    if user_id != owner_id
+        show_error_message("Du är inte skaparen av denna tiden. Du kan inte radera en tid som tillhör någon annan", "Tillbaka till tiden", "/times/#{category_id}/#{time_id}")
+    else
+        #Vi raderar tiden
+        db.execute("DELETE FROM Times WHERE id=?", time_id)
+    end
+    
+    #Skicka tillbaka användaren till tidslistan
+    redirect("/categories/#{category_id}")
 end
 
 

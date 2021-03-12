@@ -81,5 +81,22 @@ def time_input_accepted?(time_input, category_id)
 end
 
 def time_to_string(h, m, s, f)
-    return "#{h}:#{m / 10}#{m % 10}:#{s / 10}#{s % 10}:#{f / 10}#{f % 10}"
+    return "#{h}:#{m / 10}#{m % 10}:#{s / 10}#{s % 10}.#{f / 10}#{f % 10}"
+end
+
+
+def insertIntoDB(entitet, attribut, värden)
+    command = "INSERT INTO " + entitet + " ("
+    command += attribut.join(", ")
+    command += " VALUES ("
+    command += ("?" * värden.length).join(", ")
+    command += ")"
+    p command
+    #...
+    #Hur kan jag använda en array av värden som argument?
+end
+
+def getUserWithId(id)
+    owner = db.execute('SELECT username From Users WHERE id = ?', id).first
+    return owner
 end

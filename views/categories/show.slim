@@ -8,6 +8,7 @@ h2 Alla tider:
 ul
 - times.each do |time|
     section
-        li = time[:time]
-        p = time[:date]
-        p = time[:user_id]
+        li = time["time"]
+        p = time["date"]
+        p = time["user_id"]
+        a href="/times/#{cat["id"]}/#{time["id"]}" Show
