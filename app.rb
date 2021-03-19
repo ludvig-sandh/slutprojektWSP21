@@ -16,9 +16,6 @@ enable :sessions
 #6. Lägg till felhantering (meddelande om man skriver in fel user/lösen)
 
 
-
-
-
 #Övriga routes
 get('/') do
     redirect('/home')

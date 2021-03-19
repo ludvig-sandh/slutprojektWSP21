@@ -5,10 +5,15 @@ a href="/times/#{cat["id"]}/new" = "Lägg till tid"
 
 h2 Alla tider:
 
-ul
-- times.each do |time|
-    section
-        li = time["time"]
-        p = time["date"]
-        p = time["user_id"]
-        a href="/times/#{cat["id"]}/#{time["id"]}" Show
+table
+    tr class="top_tr"
+        th Time
+        th Date
+        th User
+
+    - times.each do |time|
+        tr
+            td
+                a href="/times/#{cat["id"]}/#{time["id"]}" = time["time"]
+            td = time["date"]
+            td = time["user_id"]
