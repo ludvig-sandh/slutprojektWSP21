@@ -71,6 +71,8 @@ get('/categories/:id') do
     times = db.execute('SELECT * From Times WHERE category_id = ?', category_id)
     cat = db.execute('SELECT * From Categories WHERE id = ?', category_id).first
 
+    sort_times(times)
+
     #Vi måste ändra så att vi skickar med användarnamnen för varje tid, istället
     #för användarnas id
 
@@ -81,6 +83,10 @@ end
 get('/categories/:id/edit') do
     #Hämta kategori-id som vi hanterar (från parametrar)
     category_id = params[:id]
+
+    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
+    route_back = "/categories/#{category_id}"
+    session[:route_back] = route_back
     
     #Hämta användar-id: (bara inloggade användare får ändra på en kategori)
     user_id = get_user_id()
@@ -92,7 +98,7 @@ get('/categories/:id/edit') do
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
     if user_id != owner_id
-        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorier", "/categories/#{category_id}")
+        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorin", route_back)
     else
         slim(:"categories/edit", locals: {category: category})
     end
@@ -101,6 +107,10 @@ end
 post('/categories/:id/update') do
     #Hämta kategori-id som vi hanterar (från parametrar)
     category_id = params[:id]
+
+    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
+    route_back = "/categories/#{category_id}"
+    session[:route_back] = route_back
     
     #Hämta användar-id: (bara inloggade användare får ändra på en kategori)
     user_id = get_user_id()
@@ -112,7 +122,7 @@ post('/categories/:id/update') do
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
     if user_id != owner_id
-        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorier", "/categories/#{category_id}")
+        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorier", route_back)
     end
     
     #Användaren är authorized. Hämta datan, dvs det nya namnet på kategorin, från formuläret
@@ -132,6 +142,10 @@ end
 post('/categories/:id/delete') do
     #Hämta kategori-id som vi hanterar (från parametrar)
     category_id = params[:id]
+
+    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
+    route_back = "/categories/#{category_id}"
+    session[:route_back] = route_back
     
     #Hämta användar-id: (bara inloggade användare får ändra på en kategori)
     user_id = get_user_id()
@@ -143,7 +157,7 @@ post('/categories/:id/delete') do
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som får radera den
     if user_id != owner_id
-        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte radera en kategori som någon annan äger", "Tillbaka till kategorier", "/categories/:#{category_id}")
+        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte radera en kategori som någon annan äger", "Tillbaka till kategorier", route_back)
     else
         #Vi raderar kategorin, samt alla tider som hör till denna kategorin
         db.execute("DELETE FROM Categories WHERE id=?", category_id)
@@ -155,6 +169,10 @@ post('/categories/:id/delete') do
 end
 
 post('/categories') do
+    #Backup-route: dvs var ska användaren skickas om den inte får authorization?
+    route_back = "/categories"
+    session[:route_back] = route_back
+
     #Detta får bara inloggade användare göra
     user_id = get_user_id()
 
@@ -173,11 +191,15 @@ end
 
 #Times
 get('/times/:category_id/new') do
-    #Detta får bara inloggade användare göra
-    check_logged_in()
-
     #Hämta vilket kategori-id som användaren vill lägga till en tid för
     category_id = params[:category_id]
+
+    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
+    route_back = "/categories/#{category_id}"
+    session[:route_back] = route_back
+
+    #Detta får bara inloggade användare göra
+    check_logged_in()
 
     #Hämta kategorinamnet för denna kategorin
     db = connect_to_db()
@@ -210,27 +232,31 @@ end
 
 #Entiteten "Times" har attributen user_id, category_id, date (datum då tiden skapad), time (själva tiden)
 post('/times/:category_id') do
-    #Detta får bara inloggade användare göra
-    user_id = get_user_id()
-
     #Hämta vilket kategori-id som användaren vill lägga till en tid för
     category_id = params[:category_id]
 
-    #Hämta tiden som skickats in av användaren
-    hours = params[:hours].to_i
-    mins = params[:minutes].to_i
-    secs = params[:seconds].to_i
-    fracs = params[:fractions].to_i
-    
-    if time_input_accepted?([hours, mins, secs, fracs], category_id)
-        time_string = time_to_string(hours, mins, secs, fracs)
-        
-        date = Time.now.strftime("%A, %B %d %Y - %k:%M:%S")
+    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
+    route_back = "/categories/#{category_id}"
+    session[:route_back] = route_back
 
-        #lägg till dbtråd som sparar tiden
-        db = connect_to_db()
-        db.execute('INSERT INTO Times (time, date, category_id, user_id) VALUES (?, ?, ?, ?)', time_string, date, category_id, user_id)
-    end
+    #Detta får bara inloggade användare göra
+    user_id = get_user_id()
+
+    #Hämta tiden som skickats in av användaren
+    hours, mins, secs, fracs = get_form_time_info()
+    
+    #Kontrollera att tiden är tillåten
+    check_time_input_accepted([hours, mins, secs, fracs], category_id)
+
+    #Formatera tidssträngen
+    time_string = time_to_string(hours, mins, secs, fracs)
+    
+    #Hämta datumet och klockslaget för denna tidens inskickning
+    date = Time.now.strftime("%A, %B %d %Y - %k:%M:%S")
+
+    #lägg till dbtråd som sparar tiden
+    db = connect_to_db()
+    db.execute('INSERT INTO Times (time, date, category_id, user_id) VALUES (?, ?, ?, ?)', time_string, date, category_id, user_id)
 
     redirect("/categories/#{category_id}")
 end
@@ -242,7 +268,11 @@ post('/times/:category_id/:time_id/delete') do
     #Hämta kategori-id:t
     category_id = params[:category_id]
     
-    #Hämta användar-id: (bara inloggade användare får ändra på en kategori)
+    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
+    route_back = "/times/#{category_id}/#{time_id}"
+    session[:route_back] = route_back
+
+    #Hämta användar-id: (bara inloggade användare får ändra på en tid)
     user_id = get_user_id()
     
     #Hämta user_id för den som äger denna tiden
@@ -252,7 +282,7 @@ post('/times/:category_id/:time_id/delete') do
 
     #Det är naturligtvis bara den som skapat (äger) denna tiden som får radera den
     if user_id != owner_id
-        show_error_message("Du är inte skaparen av denna tiden. Du kan inte radera en tid som tillhör någon annan", "Tillbaka till tiden", "/times/#{category_id}/#{time_id}")
+        show_error_message("Du är inte skaparen av denna tiden. Du kan inte radera en tid som tillhör någon annan", "Tillbaka till tiden", route_back)
     else
         #Vi raderar tiden
         db.execute("DELETE FROM Times WHERE id=?", time_id)

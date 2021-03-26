@@ -7,12 +7,16 @@ h2 Alla tider:
 
 table
     tr class="top_tr"
+        th Rank
         th Time
         th Date
         th User
 
+    - index = 1
     - times.each do |time|
         tr
+            td = index
+            -index += 1
             td
                 a href="/times/#{cat["id"]}/#{time["id"]}" = time["time"]
             td = time["date"]
