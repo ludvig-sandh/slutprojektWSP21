@@ -102,15 +102,15 @@ def sort_times(times)
 end
 
 def insert_into_DB(entitet, attribut, värden)
-    command = "INSERT INTO " + entitet + " ("
-    command += attribut.join(", ")
-    command += " VALUES ("
-    command += ("?" * värden.length).join(", ")
-    command += ")"
-    p command
+    # command = "INSERT INTO " + entitet + " ("
+    # command += attribut.join(", ")
+    # command += " VALUES ("
+    # command += ("?" * värden.length).join(", ")
+    # command += ")"
+    # p command
     #...
     #Hur kan jag använda en array av värden som argument? Answer: Gör det inte
-    db.execute(command, ?, ?)
+    # db.execute(command, ?, ?)
 end
 
 def get_user_with_id(id)

@@ -298,3 +298,38 @@ end
 
 #Users
 
+get('/login') do
+    slim(:"auth/login")
+end
+
+post('/login') do
+    #Hämta användarnamnet som användaren skrev in (input i formuläret)
+    username_input = params[:username_input]
+
+    #Hämta lösenordet som användaren skrev in
+    password_input = params[:password_input]
+
+
+end
+
+get('/register') do
+    slim(:"users/new")
+end
+
+post('/register') do
+    #Hämta användarnamnet som användaren skrev in (input i formuläret)
+    username_input = params[:username_input]
+
+    #Hämta lösenordet som användaren skrev in
+    password_input = params[:password_input]
+
+    #Hämta det bekräftade lösenordet som användaren skrev in
+    password_confirm_input = params[:password_confirm_input]
+
+
+end
+
+
+get('/logout') do
+    slim(:"auth/logout")
+end

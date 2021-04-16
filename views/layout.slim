@@ -8,6 +8,12 @@ html lang="en"
     body
 
         a href="/home" Hem
+        - if session[:user] != nil
+            a href="/logout" Logga ut
+        - else
+            a href="/login" Logga in / Registrera
+
+
         h1 Välkommen till Snabbspringning!
 
         ==yield

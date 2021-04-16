@@ -16,3 +16,7 @@ td, th {
 tr:hover:not(.top_tr) {
     background-color: #eeeeee;
 }
+
+a {
+    display: inline-block;
+}
