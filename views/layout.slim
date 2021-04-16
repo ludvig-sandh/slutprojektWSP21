@@ -8,7 +8,8 @@ html lang="en"
     body
 
         a href="/home" Hem
-        - if session[:user] != nil
+        - if session[:user_id] != nil
+            p = "Inloggad som #{session[:username]}"
             a href="/logout" Logga ut
         - else
             a href="/login" Logga in / Registrera

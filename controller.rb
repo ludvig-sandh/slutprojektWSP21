@@ -25,7 +25,7 @@ get('/home') do
     slim(:home)
 end
 
-get('/error') do
+get('/inform') do
     message = session[:message]
     link_text = session[:link_text]
     link = session[:link]
@@ -36,13 +36,16 @@ get('/error') do
         link_text = "Hem"
         link = "/home"
     end
-    slim(:"helper/error", locals: {message: message, link_text: link_text, link: link})
+    slim(:"helper/inform", locals: {message: message, link_text: link_text, link: link})
 end
 
-before do
-    check_logged_in()
+#Omdirigerar användaren till en sida som visar information till användaren
+def display_information(mes, link_t, link) #FLYTTA TILL CONTROLLER
+    session[:message] = mes
+    session[:link_text] = link_t
+    session[:link] = link
+    redirect('/inform')
 end
-
 
 #Categories
 get('/categories') do
@@ -70,13 +73,19 @@ get('/categories/:id') do
     db = connect_to_db()
     times = db.execute('SELECT * From Times WHERE category_id = ?', category_id)
     cat = db.execute('SELECT * From Categories WHERE id = ?', category_id).first
-
+    
+    #Sorterar alla tider så att ranklistan ordnas efter dem
     sort_times(times)
 
-    #Vi måste ändra så att vi skickar med användarnamnen för varje tid, istället
-    #för användarnas id
+    #Hitta användarnamnen för alla tider i ranklistan (i sorterad ordning förstås)
+    times.each do |time|
+        user_id = time["user_id"]
+        #Från id:t - hämta användarnamnet och spara det också som en nyckel (par + värde) i vår times-dictionary
+        username = db.execute('SELECT username FROM Users WHERE id = ?', user_id).first
+        time["username"] = username["username"]
+    end
 
-    #Visa dem för användaren
+    #Visa ranklistan för användaren
     slim(:"categories/show", locals: {times: times, cat: cat})
 end
 
@@ -98,7 +107,7 @@ get('/categories/:id/edit') do
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
     if user_id != owner_id
-        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorin", route_back)
+        display_information("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorin", route_back)
     else
         slim(:"categories/edit", locals: {category: category})
     end
@@ -122,7 +131,7 @@ post('/categories/:id/update') do
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
     if user_id != owner_id
-        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorier", route_back)
+        display_information("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorier", route_back)
     end
     
     #Användaren är authorized. Hämta datan, dvs det nya namnet på kategorin, från formuläret
@@ -157,7 +166,7 @@ post('/categories/:id/delete') do
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som får radera den
     if user_id != owner_id
-        show_error_message("Du är inte skaparen av denna kategorin. Du kan inte radera en kategori som någon annan äger", "Tillbaka till kategorier", route_back)
+        display_information("Du är inte skaparen av denna kategorin. Du kan inte radera en kategori som någon annan äger", "Tillbaka till kategorier", route_back)
     else
         #Vi raderar kategorin, samt alla tider som hör till denna kategorin
         db.execute("DELETE FROM Categories WHERE id=?", category_id)
@@ -282,7 +291,7 @@ post('/times/:category_id/:time_id/delete') do
 
     #Det är naturligtvis bara den som skapat (äger) denna tiden som får radera den
     if user_id != owner_id
-        show_error_message("Du är inte skaparen av denna tiden. Du kan inte radera en tid som tillhör någon annan", "Tillbaka till tiden", route_back)
+        display_information("Du är inte skaparen av denna tiden. Du kan inte radera en tid som tillhör någon annan", "Tillbaka till tiden", route_back)
     else
         #Vi raderar tiden
         db.execute("DELETE FROM Times WHERE id=?", time_id)
@@ -309,14 +318,51 @@ post('/login') do
     #Hämta lösenordet som användaren skrev in
     password_input = params[:password_input]
 
+    #Hämta referens till databasen
+    db = connect_to_db()
 
+    #Hämta det krypterade lösenordet från användaren som har det inskrivna användarnamnet
+    result = db.execute("SELECT * FROM Users WHERE username=?", username_input)
+
+    #Om det inte fanns någon användare med detta användarnamnet, informera användaren
+    if result.empty?
+        display_information("Du har skrivit in fel användarnamn eller lösenord", "Prova igen", "/login")
+    else
+        #Det fanns en användare med det inskrivna användarnamnet
+        result = result.first
+        
+        #Det lagrade krypterade lösenordet för användaren
+        password_digest = result["pw_digest"]
+
+        #Låt BCrypt hantera det krypterade lösenordet så att vi kan jämföra det sedan
+        #Om det inskrivna lösenordet stämmer överens med BCrypts beräknade jämförelsebara värde
+        if BCrypt::Password.new(password_digest) == password_input
+
+            #Hämta användar-id hos usern
+            user_id = result["id"]
+
+            #Spara användar-id i sessions så att användaren kan fortsätta vara inloggad medan hen besöker hemsidan
+            session[:user_id] = user_id
+
+            #Spara användarnamnet i sessions också så att vi lätt kan komma åt det
+            session[:username] = username_input
+
+            #Informera användaren att hen är inloggad
+            display_information("Välkommen tillbaka #{username_input}! Du är nu inloggad.", "Ta mig till startsidan", "/home")
+        else
+            #Lösenordet stämde inte
+            display_information("Du har skrivit in fel användarnamn eller lösenord", "Prova igen", "/login")
+        end
+    end
+    
+    #metoden display_information redirectar användaren så en redirect här behövs inte
 end
 
-get('/register') do
+get('/users/new') do
     slim(:"users/new")
 end
 
-post('/register') do
+post('/users') do
     #Hämta användarnamnet som användaren skrev in (input i formuläret)
     username_input = params[:username_input]
 
@@ -326,7 +372,29 @@ post('/register') do
     #Hämta det bekräftade lösenordet som användaren skrev in
     password_confirm_input = params[:password_confirm_input]
 
+    #Hämta referens till databasen
+    db = connect_to_db()
 
+    #Hämta användaren som har det inskrivna användarnamnet
+    result = db.execute("SELECT id FROM Users WHERE username=?", username_input)
+
+    #Om det inte fanns någon användare med detta användarnamnet redan
+    if result.empty?
+        if password_input == password_confirm_input
+            #Låt BCrypt hasha + salta lösenordet
+            password_digest = BCrypt::Password.create(password_input)
+            p password_digest
+
+            db.execute("INSERT INTO Users (username, pw_digest) VALUES (?, ?)", username_input, password_digest)
+            display_information("Hej #{username_input}! Du har nu registrerat dig!", "Ta mig till startsidan", "/home")
+        else
+            display_information("Lösenordet stämde inte överens med det bekräftade lösenordet", "Prova igen", "/users/new")
+        end
+    else
+        display_information("Det finns redan en användare med användarnamnet #{username_input}", "Prova igen", "/users/new")
+    end
+
+    #metoden display_information redirectar användaren så en redirect här behövs inte
 end
 
 

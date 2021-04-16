@@ -8,22 +8,14 @@ def connect_to_db()
     return db
 end
 
-#Omdirigerar användaren till en sida som visar error
-def show_error_message(mes, link_t, link) #FLYTTA TILL CONTROLLER
-    session[:message] = mes
-    session[:link_text] = link_t
-    session[:link] = link
-    redirect('/error')
-end
+
 
 #Hämtar användar-id från sessions. Om inget hittas så
 #visar vi ett meddelande om det istället och skickar användaren till route_back som tas som argument
 def get_user_id()
-    #SÅLÄNGE BARA (hårdkodad inloggning):
-    return 0
     user_id = session[:user_id]
     if user_id == nil
-        show_error_message("Du är inte inloggad, logga in eller registrera dig för att kunna göra detta", "Hem", "/home")
+        display_information("Du är inte inloggad, logga in eller registrera dig för att kunna göra detta", "Hem", "/home")
         return
     end
     return user_id
@@ -40,7 +32,7 @@ end
 def kategorinamn_accepted?(kategorinamn)
     #Om den nya kategorin är tom eller bara innehåller blanksteg, visa felmeddelande
     if kategorinamn == "" || kategorinamn =~ /\A\s*\Z/
-        show_error_message("En kategori kan inte vara tom. Döp den till något.", "Tillbaka", "/categories/new")
+        display_information("En kategori kan inte vara tom. Döp den till något.", "Tillbaka", "/categories/new")
         return false
     end
 
@@ -49,7 +41,7 @@ def kategorinamn_accepted?(kategorinamn)
     categories = db.execute('SELECT * From Categories')
     categories.each do |cat|
         if cat["name"].downcase == kategorinamn.downcase #Annars visa felmeddelande. Jag väljer att räkna två namn som samma utan hänsyn till gemener/versaler
-            show_error_message("Det finns redan en kategori med detta namnet", "Tillbaka", "/categories/new")
+            display_information("Det finns redan en kategori med detta namnet", "Tillbaka", "/categories/new")
             return false
         end
     end
@@ -61,18 +53,18 @@ end
 def check_time_input_accepted(time_input, category_id)
     time_input.each do |time|
         if time < 0
-            show_error_message("Din tid kan inte vara negativ", "Tillbaka", "/times/#{category_id}/new")
+            display_information("Din tid kan inte vara negativ", "Tillbaka", "/times/#{category_id}/new")
             return
         end
     end
     hours, minutes, seconds, fractions = time_input
 
     if hours > 2000
-        show_error_message("Din tid kan inte överstiga 2000 timmar.", "Tillbaka", "/times/#{category_id}/new")
+        display_information("Din tid kan inte överstiga 2000 timmar.", "Tillbaka", "/times/#{category_id}/new")
         return
     end
     if minutes >= 60 || seconds >= 60 || fractions >= 100
-        show_error_message("Fel, du måste skriva på rätt format, där minuter/sekunder är mindre än 60 och hundradelar är mindre än 100", "Tillbaka", "/times/#{category_id}/new")
+        display_information("Fel, du måste skriva på rätt format, där minuter/sekunder är mindre än 60 och hundradelar är mindre än 100", "Tillbaka", "/times/#{category_id}/new")
         return
     end
 end
