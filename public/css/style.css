@@ -1,22 +1,163 @@
+* {
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    margin: 0px;
+    background-color: #99B2DD;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
-}
-
-td, th {
-    border: 1px solid #dddddd;
-    text-align: left;
-    padding: 8px;
+    background-color: #E9AFA3;
 }
 
 .top_tr {
-    background-color: #e3e3e9;
+    background-color: #E9AFA3;
 }
 
 tr:hover:not(.top_tr) {
-    background-color: #eeeeee;
+    background-color: #e0998b;
 }
 
 a {
     display: inline-block;
+    color: #F9DEC9;
+    color: #F9DEC9;
+    margin: 10px;
+    font-size: 20px;
 }
+
+.bl {
+    display: block;
+    margin-left: 10px;
+}
+
+.in {
+    margin-right: 0px;
+    margin-left: 0px;
+    display: inline;
+}
+
+header {
+    margin: 0px;
+    background-color: #3A405A;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.headsecleft {
+    flex: 25%;
+}
+
+.headsecmid {
+    flex: 50%;
+    text-align: center;
+}
+
+.headsecright {
+    text-align: right;
+    flex: 25%;
+}
+
+.headsec {
+    margin: 10px 10px 0px 0px;
+}
+
+header > section > * {
+    color: #F9DEC9;
+}
+
+h1 {
+    color: #F9DEC9;
+}
+
+h2, h3 {
+    color: #F9DEC9;
+    margin: 10px;
+}
+
+p {
+    color: #F9DEC9;
+    margin: 10px;
+    font-size: 20px;
+}
+
+.inform {
+    position: absolute;
+    display: block;
+    width: 50vw;
+    top: 25%;
+    left: 25%;
+    border-bottom: #3A405A 5px solid;
+    border-left: #3A405A 5px solid;
+    border-radius: 4px;
+    padding-left: 10px;
+    padding-bottom: 10px
+}
+
+main {
+    padding: 10px;
+}
+
+.nlm {
+    margin-left: 0px;
+}
+
+button {
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    border-radius: 10px;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    border: #3A405A 5px solid;
+    background-color: #3A405A;
+    transition-duration: 0.15s;
+}
+
+.buttona {
+    display: block;
+    padding: 5px;
+}
+
+button:hover {
+    box-shadow: #688fd3 4px 4px 5px 2px;
+}
+
+button > * {
+    text-decoration: none;
+}
+
+td, th {
+    border: 2px solid #e0988a;
+    text-align: left;
+    padding: 8px;
+    color: #685044;
+}
+
+td > *, th > * {
+    
+    color: #685044;
+}
+
+.ml {
+    margin-left: 20px;
+}
+
+.space {
+    display: block;
+    height: 10px;
+}
+
+/*
+#3A405A
+#F9DEC9
+#99B2DD
+#E9AFA3
+#685044
+*/

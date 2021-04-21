@@ -1,8 +1,10 @@
-h2 Alla kategorier:
+main
+    button
+        a class="buttona" href="categories/new" Skapa en ny kategori
 
-a href="categories/new" Skapa en ny kategori
+    h2 Alla kategorier:
 
-ul
-- categories.each do |cat|
-    section
-        a href="/categories/#{cat["id"]}" = cat["name"]
+    ul
+    - categories.each do |cat|
+        section
+            a href="/categories/#{cat["id"]}" = cat["name"]

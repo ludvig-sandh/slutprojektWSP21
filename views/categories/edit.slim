@@ -1,8 +1,10 @@
-h2 Redigera din kategori
+main
+    article class="inform"
+        h2 Redigera din kategori
 
-form action="/categories/#{category["id"]}/update" method="post"
-    input type="text" name="new_name" placeholder="#{category["name"]}"
-    input type="submit" value="Ändra kategorinamn"/
+        form action="/categories/#{category["id"]}/update" method="post"
+            input type="text" name="new_name" placeholder="#{category["name"]}"
+            input type="submit" value="Ändra kategorinamn"/
 
-form action="/categories/#{category["id"]}/delete" method="post"
-    input type="submit" value="Radera kategori"/
+        form action="/categories/#{category["id"]}/delete" method="post"
+            input type="submit" value="Radera kategori"/

@@ -5,7 +5,7 @@ h2 = "Profil för #{user["username"]}"
 
 h3 = "Användarens skapade kategorier:"
 - created_cats.each do |cat|
-    a href="/categories/#{cat["id"]}" = cat["name"]
+    a class="bl" href="/categories/#{cat["id"]}" = cat["name"]
 
 h3 = "Användarens inskickade tider:"
 table
@@ -24,4 +24,4 @@ table
 
 h3 = "Användarens gillade kategorier:"
 - categories_liking.each do |cat|
-    a href="/categories/#{cat["id"]}" = cat["name"]
+    a class="bl" href="/categories/#{cat["id"]}" = cat["name"]

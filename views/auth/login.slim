@@ -1,7 +1,10 @@
-h2 Logga in. Har du inget konto? Registrera dig
-a href="/users/new" här!
+main
+    article class="inform"
+        h2 Logga in
+        p class="in" Har du inget konto? Registrera dig 
+        a class="nlm" href="/users/new" här!
 
-form action="/login" method="post"
-    input type="text" name="username_input" placeholder="Användarnamn"
-    input type="password" name="password_input" placeholder="Lösenord"
-    input type="submit" value="Logga in"/
+        form action="/login" method="post"
+            input type="text" name="username_input" placeholder="Användarnamn"
+            input type="password" name="password_input" placeholder="Lösenord"
+            input type="submit" value="Logga in"/

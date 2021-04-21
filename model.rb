@@ -15,7 +15,7 @@ end
 def get_user_id()
     user_id = session[:user_id]
     if user_id == nil
-        display_information("Du är inte inloggad, logga in eller registrera dig för att kunna göra detta", "Hem", "/home")
+        display_information("Du är inte inloggad, logga in eller registrera dig för att kunna göra detta", "Hem", "/login")
         return
     end
     return user_id

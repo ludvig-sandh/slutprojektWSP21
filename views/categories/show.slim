@@ -1,36 +1,40 @@
-h2 = cat["name"]
-p = "Skapad av"
-a href="/users/#{cat["user_id"]}/show" = creator
+main
+    h2 class="in" = "Kategori: #{cat["name"]}"
+    p class="in ml" Skapad av 
+    a class="in" href="/users/#{cat["user_id"]}/show" = creator
 
-a href="/categories/#{cat["id"]}/edit" = "Redigera"
-a href="/times/#{cat["id"]}/new" = "Lägg till tid"
+    button
+        a class="buttona" href="/categories/#{cat["id"]}/edit" = "Redigera"
 
-form action="/likes/#{user_id}/#{cat["id"]}" method="post"
-    - if does_like
-        input type="submit" value="Sluta gilla denna kategorin"/
-    - else
-        input type="submit" value="Gilla denna kategorin"/
+    button
+        a class="buttona" href="/times/#{cat["id"]}/new" = "Lägg till tid"
 
-h2 Alla tider:
+    form action="/likes/#{user_id != nil ? user_id : -1}/#{cat["id"]}" method="post"
+        - if does_like
+            input type="submit" value="Sluta gilla denna kategorin"/
+        - else
+            input type="submit" value="Gilla denna kategorin"/
 
-table
-    tr class="top_tr"
-        th Rank
-        th Tid
-        th Datum
-        th Användare
+    h2 Alla tider:
 
-    - index = 1
-    - times.each do |time|
-        tr
-            td = index
-            - index += 1
-            td
-                a href="/times/#{cat["id"]}/#{time["id"]}" = time["time"]
-            td = time["date"]
-            td
-                a href="/users/#{time["user_id"]}/show" = time["username"]
+    table
+        tr class="top_tr"
+            th Rank
+            th Tid
+            th Datum
+            th Användare
 
-h3 = "Användare som gillar denna kategorin:"
-- users_liking.each do |user|
-    a href="/users/#{user["id"]}/show" = user["username"]
+        - index = 1
+        - times.each do |time|
+            tr
+                td = index
+                - index += 1
+                td
+                    a href="/times/#{cat["id"]}/#{time["id"]}" = time["time"]
+                td = time["date"]
+                td
+                    a href="/users/#{time["user_id"]}/show" = time["username"]
+
+    h2 = "Användare som gillar denna kategorin:"
+    - users_liking.each do |user|
+        a class="bl" href="/users/#{user["id"]}/show" = user["username"]

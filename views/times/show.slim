@@ -1,9 +1,10 @@
-h2 = cat["name"]
+main
+    h2 class="nlm" = "Tiden tillhör kategorin #{cat["name"]}"
 
-h3 = "#{time["time"]}, #{time["date"]}"
-p Skapad av
-a href="/users/#{time["user_id"]}/show" = username["username"]
+    h3 class="nlm" = "Tid: #{time["time"]}, inskickad #{time["date"]}"
+    p class="in" Skapad av 
+    a class="in" href="/users/#{time["user_id"]}/show" = username["username"]
 
-- if time["user_id"] == session[:user_id]
-    form action="/times/#{cat["id"]}/#{time["id"]}/delete" method="post"
-        input type="submit" value="Radera"/
+    - if time["user_id"] == session[:user_id]
+        form action="/times/#{cat["id"]}/#{time["id"]}/delete" method="post"
+            input type="submit" value="Radera"/

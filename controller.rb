@@ -23,7 +23,7 @@ get('/') do
 end
 
 get('/home') do
-    slim(:home)
+    slim(:"helper/home")
 end
 
 get('/inform') do
@@ -213,6 +213,8 @@ post('/categories') do
 
         #Lägg in kategorin i databasen, och omdirigera användaren till kategorisidan
         db = connect_to_db()
+        p kategorinamn
+        p user_id
         db.execute('INSERT INTO Categories (name, user_id) VALUES (?, ?)', kategorinamn, user_id)
         redirect('/categories')
     end
@@ -343,14 +345,12 @@ post('/login') do
     db = connect_to_db()
 
     #Hämta det krypterade lösenordet från användaren som har det inskrivna användarnamnet
-    result = db.execute("SELECT * FROM Users WHERE username=?", username_input)
+    result = db.execute("SELECT * FROM Users WHERE username=?", username_input).first
 
     #Om det inte fanns någon användare med detta användarnamnet, informera användaren
     if result.empty?
         display_information("Du har skrivit in fel användarnamn eller lösenord", "Prova igen", "/login")
     else
-        #Det fanns en användare med det inskrivna användarnamnet
-        result = result.first
         
         #Det lagrade krypterade lösenordet för användaren
         password_digest = result["pw_digest"]
@@ -403,10 +403,10 @@ post('/users') do
     db = connect_to_db()
 
     #Hämta användaren som har det inskrivna användarnamnet
-    result = db.execute("SELECT id FROM Users WHERE username=?", username_input)
+    result = db.execute("SELECT id FROM Users WHERE username=?", username_input).first
 
     #Om det inte fanns någon användare med detta användarnamnet redan
-    if result.empty?
+    if result == nil
         if password_input == password_confirm_input
             #Låt BCrypt hasha + salta lösenordet
             password_digest = BCrypt::Password.create(password_input)
@@ -414,7 +414,7 @@ post('/users') do
             db.execute("INSERT INTO Users (username, pw_digest) VALUES (?, ?)", username_input, password_digest)
             
             #Hitta användarens id från databasen och spara det i session
-            user_id = db.execute("SELECT id FROM Users WHERE username=?", username_input)
+            user_id = db.execute("SELECT id FROM Users WHERE username=?", username_input).first["id"]
             session[:user_id] = user_id
             session[:username] = username_input
 

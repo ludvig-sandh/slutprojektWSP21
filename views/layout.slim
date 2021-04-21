@@ -5,17 +5,23 @@ html lang="en"
         meta name="viewport" content="width=device-width, initial-scale=1.0"/
         title Snabbspringning
         link rel="stylesheet" type='text/css' href="/css/style.css"/
+        link rel="preconnect" href="https://fonts.gstatic.com"
+        link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"
     body
 
-        a href="/home" Hem
-        - if session[:user_id] != nil
-            p = "Inloggad som #{session[:username]}"
-            a href="/users/#{session[:user_id]}/show" Visa profil
-            a href="/logout" Logga ut
-        - else
-            a href="/login" Logga in / Registrera
+        header
+            section class="headsec headsecleft"
+                a class="bl" href="/home" Hem
+                - if session[:user_id] == nil
+                    a class="bl" href="/login" Logga in / Registrera
+                - else 
+                    a class="bl" href="/logout" Logga ut
 
-
-        h1 Välkommen till Snabbspringning!
+            section class="headsec headsecmid"
+                h1 Välkommen till Snabbspringning!
+            section class="headsec headsecright"
+                - if session[:user_id] != nil
+                    p class="in" = "Inloggad som #{session[:username]}"
+                    a class="bl" href="/users/#{session[:user_id]}/show" Visa profil
 
         ==yield

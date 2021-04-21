@@ -1,12 +1,14 @@
-h2 = "Lägg till en ny tid för #{category["name"]}" 
+main
+    article class="inform"
+        h2 = "Lägg till en ny tid för #{category["name"]}" 
 
-form action="/times/#{category["id"]}" method="post"
-    p Timmar:
-    input type="number" name="hours" placeholder="HH"
-    p Minuter:
-    input type="number" name="minutes" placeholder="MM"
-    p Sekunder:
-    input type="number" name="seconds" placeholder="SS"
-    p Hundradelar:
-    input type="number" name="fractions" placeholder="mm"
-    input type="submit" value="Lägg till"/
+        form action="/times/#{category["id"]}" method="post"
+            p Timmar:
+            input type="number" name="hours" placeholder="HH"
+            p Minuter:
+            input type="number" name="minutes" placeholder="MM"
+            p Sekunder:
+            input type="number" name="seconds" placeholder="SS"
+            p Hundradelar:
+            input type="number" name="fractions" placeholder="mm"
+            input type="submit" value="Lägg till"/
