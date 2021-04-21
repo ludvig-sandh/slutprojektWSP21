@@ -10,6 +10,7 @@ html lang="en"
         a href="/home" Hem
         - if session[:user_id] != nil
             p = "Inloggad som #{session[:username]}"
+            a href="/users/#{session[:user_id]}/show" Visa profil
             a href="/logout" Logga ut
         - else
             a href="/login" Logga in / Registrera

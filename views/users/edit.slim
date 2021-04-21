@@ -1,0 +1,6 @@
+p = "Ändra lösenord"
+form action="/users/#{user["id"]}/update" method="post"
+    input type="password" name="current_password" placeholder="Nuvarande lösenord"
+    input type="password" name="new_password" placeholder="Nytt lösenord"
+    input type="password" name="confirm_new_password" placeholder="Bekräfta nytt lösenord"
+    input type="submit" value="Ändra lösenord"/

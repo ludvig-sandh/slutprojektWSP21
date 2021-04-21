@@ -1,0 +1,23 @@
+h2 = "Profil för #{user["username"]}"
+
+- if user["id"] == session[:user_id]
+    a href="/users/#{user["id"]}/edit" Ändra lösenord
+
+h3 = "Användarens skapade kategorier:"
+- created_cats.each do |cat|
+    a href="/categories/#{cat["id"]}" = cat["name"]
+
+h3 = "Användarens inskickade tider:"
+table
+    tr class="top_tr"
+        th Tid
+        th Datum
+        th Kategori
+
+    - submitted_times.each do |time|
+        tr
+            td
+                a href="/times/#{time["category_id"]}/#{time["id"]}" = time["time"]
+            td = time["date"]
+            td
+                a href="/categories/#{time["category_id"]}/show" = time["category_name"]

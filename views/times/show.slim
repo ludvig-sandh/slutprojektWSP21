@@ -1,6 +1,9 @@
 h2 = cat["name"]
 
-h3 = "#{time["time"]}, #{time["date"]}, #{time["user_id"]}"
+h3 = "#{time["time"]}, #{time["date"]}"
+p Skapad av
+a href="/users/#{time["user_id"]}/show" = username["username"]
 
-form action="/times/#{cat["id"]}/#{time["id"]}/delete" method="post"
-    input type="submit" value="Radera"/
+- if time["user_id"] == session[:user_id]
+    form action="/times/#{cat["id"]}/#{time["id"]}/delete" method="post"
+        input type="submit" value="Radera"/

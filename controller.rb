@@ -15,6 +15,7 @@ enable :sessions
 #5. Låt inloggad användare updatera och ta bort sina formulär.
 #6. Lägg till felhantering (meddelande om man skriver in fel user/lösen)
 
+#Felhantera lösenord, max 8 tecken!
 
 #Övriga routes
 get('/') do
@@ -51,7 +52,7 @@ end
 get('/categories') do
     #Koppling till databasen, och hämta alla kategorier
     db = connect_to_db()
-    categories = db.execute('SELECT * From Categories')
+    categories = db.execute('SELECT * FROM Categories')
     
     #Visa dem för användaren
     slim(:"categories/index", locals: {categories: categories})
@@ -71,8 +72,11 @@ get('/categories/:id') do
     
     #Hämta alla tider som finns sparade för denna kategorin
     db = connect_to_db()
-    times = db.execute('SELECT * From Times WHERE category_id = ?', category_id)
-    cat = db.execute('SELECT * From Categories WHERE id = ?', category_id).first
+    times = db.execute('SELECT * FROM Times WHERE category_id = ?', category_id)
+    cat = db.execute('SELECT * FROM Categories WHERE id = ?', category_id).first
+
+    #Hämta användarnamnet bakom kategorin
+    creator = db.execute('SELECT username FROM Users WHERE id = ?', cat["user_id"]).first["username"]
     
     #Sorterar alla tider så att ranklistan ordnas efter dem
     sort_times(times)
@@ -80,13 +84,15 @@ get('/categories/:id') do
     #Hitta användarnamnen för alla tider i ranklistan (i sorterad ordning förstås)
     times.each do |time|
         user_id = time["user_id"]
+        
         #Från id:t - hämta användarnamnet och spara det också som en nyckel (par + värde) i vår times-dictionary
         username = db.execute('SELECT username FROM Users WHERE id = ?', user_id).first
+
         time["username"] = username["username"]
     end
 
     #Visa ranklistan för användaren
-    slim(:"categories/show", locals: {times: times, cat: cat})
+    slim(:"categories/show", locals: {times: times, cat: cat, creator: creator})
 end
 
 get('/categories/:id/edit') do
@@ -102,7 +108,7 @@ get('/categories/:id/edit') do
     
     #Hämta user_id för den som äger denna kategorin
     db = connect_to_db()
-    category = db.execute('SELECT * From Categories WHERE id = ?', category_id).first
+    category = db.execute('SELECT * FROM Categories WHERE id = ?', category_id).first
     owner_id = category["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
@@ -126,7 +132,7 @@ post('/categories/:id/update') do
     
     #Hämta user_id för den som äger denna kategorin
     db = connect_to_db()
-    owner = db.execute('SELECT user_id From Categories WHERE id = ?', category_id).first
+    owner = db.execute('SELECT user_id FROM Categories WHERE id = ?', category_id).first
     owner_id = owner["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
@@ -161,7 +167,7 @@ post('/categories/:id/delete') do
     
     #Hämta user_id för den som äger denna kategorin
     db = connect_to_db()
-    owner = db.execute('SELECT user_id From Categories WHERE id = ?', category_id).first
+    owner = db.execute('SELECT user_id FROM Categories WHERE id = ?', category_id).first
     owner_id = owner["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som får radera den
@@ -212,7 +218,7 @@ get('/times/:category_id/new') do
 
     #Hämta kategorinamnet för denna kategorin
     db = connect_to_db()
-    category = db.execute('SELECT * From Categories WHERE id = ?', category_id).first
+    category = db.execute('SELECT * FROM Categories WHERE id = ?', category_id).first
 
     #Visa formuläret för den som är inloggad
     slim(:"times/new", locals: {category: category})
@@ -226,17 +232,20 @@ get('/times/:category_id/:time_id') do
 
     #Hämta kategorinamnet för denna kategorin
     db = connect_to_db()
-    category = db.execute('SELECT * From Categories WHERE id = ?', category_id).first
+    category = db.execute('SELECT * FROM Categories WHERE id = ?', category_id).first
 
     #Hämta vilket tids-id som tiden har
     time_id = params[:time_id]
 
     #Hämta data om denna tiden
-    time = db.execute('SELECT * From Times WHERE id = ?', time_id).first
+    time = db.execute('SELECT * FROM Times WHERE id = ?', time_id).first
+
+    #Från id:t - hämta användarnamnet och skicka med det också i locals
+    username = db.execute('SELECT username FROM Users WHERE id = ?', time["user_id"]).first
 
     #Visa denna tiden i mer detalj
     #Här vill vi också att vi ska se användarnamnet sen, och inte användar-id:t
-    slim(:"times/show", locals: {cat: category, time: time})
+    slim(:"times/show", locals: {cat: category, time: time, username: username})
 end
 
 #Entiteten "Times" har attributen user_id, category_id, date (datum då tiden skapad), time (själva tiden)
@@ -286,7 +295,7 @@ post('/times/:category_id/:time_id/delete') do
     
     #Hämta user_id för den som äger denna tiden
     db = connect_to_db()
-    owner = db.execute('SELECT user_id From Times WHERE id = ?', time_id).first
+    owner = db.execute('SELECT user_id FROM Times WHERE id = ?', time_id).first
     owner_id = owner["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna tiden som får radera den
@@ -300,8 +309,6 @@ post('/times/:category_id/:time_id/delete') do
     #Skicka tillbaka användaren till tidslistan
     redirect("/categories/#{category_id}")
 end
-
-
 
 
 
@@ -358,6 +365,12 @@ post('/login') do
     #metoden display_information redirectar användaren så en redirect här behövs inte
 end
 
+get('/logout') do
+    session[:user_id] = nil
+    session[:username] = nil
+    slim(:"auth/logout")
+end
+
 get('/users/new') do
     slim(:"users/new")
 end
@@ -383,9 +396,14 @@ post('/users') do
         if password_input == password_confirm_input
             #Låt BCrypt hasha + salta lösenordet
             password_digest = BCrypt::Password.create(password_input)
-            p password_digest
 
             db.execute("INSERT INTO Users (username, pw_digest) VALUES (?, ?)", username_input, password_digest)
+            
+            #Hitta användarens id från databasen och spara det i session
+            user_id = db.execute("SELECT id FROM Users WHERE username=?", username_input)
+            session[:user_id] = user_id
+            session[:username] = username_input
+
             display_information("Hej #{username_input}! Du har nu registrerat dig!", "Ta mig till startsidan", "/home")
         else
             display_information("Lösenordet stämde inte överens med det bekräftade lösenordet", "Prova igen", "/users/new")
@@ -397,7 +415,92 @@ post('/users') do
     #metoden display_information redirectar användaren så en redirect här behövs inte
 end
 
+get('/users/:id/show') do
+    #Hämta användar-id:t som vi vill kolla profilen för
+    profile_user_id = params[:id]
 
-get('/logout') do
-    slim(:"auth/logout")
+    #Skapa en instans av databasen
+    db = connect_to_db()
+
+    #Hämta information om profilen
+    user = db.execute("SELECT * FROM Users WHERE id = ?", profile_user_id).first
+
+    #Hämta alla kategorier som användaren skapat
+    created_cats = db.execute("SELECT * FROM Categories WHERE user_id = ?", profile_user_id)
+
+    #Hämta alla tider som användaren skickat in
+    submitted_times = db.execute("SELECT * FROM Times WHERE user_id = ?", profile_user_id)
+
+    #Dessa sparar än så länge inte tidens kategoris namn, så vi kan
+    #fixa det genom att loopa igenom varje tid och hämta det från db
+    submitted_times.each do |time|
+        cat_name = db.execute("SELECT name FROM Categories WHERE id = ?", time["category_id"]).first
+        time["category_name"] = cat_name["name"]
+    end
+
+    slim(:"users/show", locals: {user: user, created_cats: created_cats, submitted_times: submitted_times})
+end
+
+get('/users/:id/edit') do
+    #Hämta användar-id:t som vi vill kolla profilen för
+    profile_user_id = params[:id]
+
+    #Skapa en instans av databasen
+    db = connect_to_db()
+
+    #Hämta information om profilen
+    user = db.execute("SELECT * FROM Users WHERE id = ?", profile_user_id).first
+
+    slim(:"users/edit", locals: {user: user})
+end
+
+post('/users/:id/update') do
+    #Hämta användar-id:t som vi vill ändra profilen för
+    profile_user_id = params[:id].to_i
+
+    #Hämta användar-id:t
+    user_id = session[:user_id]
+
+    #Om dessa inte stämmer överens har inte användaren authorization för att ändra lösenord
+    if profile_user_id != user_id || user_id == nil
+        display_information("Du har inte behörighet att ändra lösenordet hos den här användaren", "Tillbaka", "/users/#{profile_user_id}/show")
+    else
+        #Hämta de inskrivna lösenorden
+        current_password_input = params[:current_password]
+        new_password_input = params[:new_password]
+        confirm_new_password_input = params[:confirm_new_password]
+
+        #Hämta referens till databasen
+        db = connect_to_db()
+
+        #Hämta det krypterade lösenordet från användaren
+        result = db.execute("SELECT * FROM Users WHERE id = ?", user_id).first
+
+        #Det lagrade krypterade lösenordet för användaren
+        password_digest = result["pw_digest"]
+
+        #Låt BCrypt hantera det krypterade lösenordet så att vi kan jämföra det sedan
+        #Om det inskrivna lösenordet stämmer överens med BCrypts beräknade jämförelsebara värde
+        if BCrypt::Password.new(password_digest) == current_password_input
+
+            if new_password_input == confirm_new_password_input
+
+                #Låt BCrypt hasha + salta det nya lösenordet
+                password_digest = BCrypt::Password.create(new_password_input)
+                
+                #Uppdatera det nya lösenordet i databasen
+                db.execute("UPDATE Users SET pw_digest = ? WHERE id = ?", password_digest, session[:user_id])
+
+                #Informera användaren att hen har bytt lösenord
+                display_information("Du har nu ändrat lösenordet.", "Tillbaka", "/users/#{user_id}/show")
+            else
+                #Informera om att de nya lösenorden inte stämde överens
+                display_information("Dina nya lösenord stämde inte överens.", "Tillbaka", "/users/#{user_id}/show")
+            end
+
+        else
+            #Lösenordet stämde inte
+            display_information("Du har skrivit in fel lösenord", "Prova igen", "/users/#{user_id}/show")
+        end
+    end
 end

@@ -1,4 +1,6 @@
 h2 = cat["name"]
+p = "Skapad av"
+a href="/users/#{cat["user_id"]}/show" = creator
 
 a href="/categories/#{cat["id"]}/edit" = "Redigera"
 a href="/times/#{cat["id"]}/new" = "Lägg till tid"
@@ -8,16 +10,17 @@ h2 Alla tider:
 table
     tr class="top_tr"
         th Rank
-        th Time
-        th Date
-        th User
+        th Tid
+        th Datum
+        th Användare
 
     - index = 1
     - times.each do |time|
         tr
             td = index
-            -index += 1
+            - index += 1
             td
                 a href="/times/#{cat["id"]}/#{time["id"]}" = time["time"]
             td = time["date"]
-            td = time["username"]
+            td
+                a href="/users/#{time["user_id"]}/show" = time["username"]
