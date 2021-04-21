@@ -20,4 +20,8 @@ table
                 a href="/times/#{time["category_id"]}/#{time["id"]}" = time["time"]
             td = time["date"]
             td
-                a href="/categories/#{time["category_id"]}/show" = time["category_name"]
+                a href="/categories/#{time["category_id"]}" = time["category_name"]
+
+h3 = "Användarens gillade kategorier:"
+- categories_liking.each do |cat|
+    a href="/categories/#{cat["id"]}" = cat["name"]

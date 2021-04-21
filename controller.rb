@@ -91,8 +91,22 @@ get('/categories/:id') do
         time["username"] = username["username"]
     end
 
+    #Se om personen är inloggad
+    user_id = session[:user_id]
+    does_like = false
+    if user_id != nil
+        #Se om den här användaren gillar denna kategorin eller inte
+        like = db.execute("SELECT * FROM users_categories_rel WHERE user_id = ? AND category_id = ?", user_id, category_id).first
+        if like != nil
+            does_like = true
+        end
+    end
+
+    #Hämta alla användare som gillar den här kategorin med en inner join
+    users_liking = db.execute("SELECT * FROM users_categories_rel INNER JOIN Users ON users_categories_rel.user_id = Users.id WHERE category_id = ?", category_id)
+
     #Visa ranklistan för användaren
-    slim(:"categories/show", locals: {times: times, cat: cat, creator: creator})
+    slim(:"categories/show", locals: {times: times, cat: cat, creator: creator, does_like: does_like, users_liking: users_liking, user_id: user_id})
 end
 
 get('/categories/:id/edit') do
@@ -438,7 +452,10 @@ get('/users/:id/show') do
         time["category_name"] = cat_name["name"]
     end
 
-    slim(:"users/show", locals: {user: user, created_cats: created_cats, submitted_times: submitted_times})
+    #Hämta alla kategorier som den här användaren gillar med en inner join
+    categories_liking = db.execute("SELECT * FROM users_categories_rel INNER JOIN Categories ON users_categories_rel.category_id = Categories.id WHERE users_categories_rel.user_id = ?", user["id"])
+
+    slim(:"users/show", locals: {user: user, created_cats: created_cats, submitted_times: submitted_times, categories_liking: categories_liking})
 end
 
 get('/users/:id/edit') do
@@ -503,4 +520,33 @@ post('/users/:id/update') do
             display_information("Du har skrivit in fel lösenord", "Prova igen", "/users/#{user_id}/show")
         end
     end
+end
+
+post('/likes/:user_id/:category_id') do
+    #Om användaren inte är inloggad än
+    if session[:user_id] == nil
+        display_information("Du måste vara inloggad för att göra detta.", "Logga in", "/login")
+    end
+
+    #Hämta parameterdata från formuläret
+    user_id = params[:user_id]
+    category_id = params[:category_id]
+
+    #Hämta koppling till db
+    db = connect_to_db()
+
+    #Se om det finns sparad data om den här gillningen
+    like = db.execute("SELECT * FROM users_categories_rel WHERE user_id = ? AND category_id = ?", user_id, category_id).first
+
+    p like: like
+
+    #Om användaren redan gillar den här kategorin, och vill "ogilla" den
+    if like != nil
+        #"ogilla" kategorin, alltså radera den här relationen
+        db.execute("DELETE FROM users_categories_rel WHERE user_id = ? AND category_id = ?", user_id, category_id)
+    else
+        #"gilla" kategorin, lägg till relationen mellan user och kategori
+        db.execute("INSERT INTO users_categories_rel (user_id, category_id) VALUES (?, ?)", user_id, category_id)
+    end
+    redirect("/categories/#{category_id}")
 end

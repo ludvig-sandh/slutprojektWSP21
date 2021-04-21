@@ -5,6 +5,12 @@ a href="/users/#{cat["user_id"]}/show" = creator
 a href="/categories/#{cat["id"]}/edit" = "Redigera"
 a href="/times/#{cat["id"]}/new" = "Lägg till tid"
 
+form action="/likes/#{user_id}/#{cat["id"]}" method="post"
+    - if does_like
+        input type="submit" value="Sluta gilla denna kategorin"/
+    - else
+        input type="submit" value="Gilla denna kategorin"/
+
 h2 Alla tider:
 
 table
@@ -24,3 +30,7 @@ table
             td = time["date"]
             td
                 a href="/users/#{time["user_id"]}/show" = time["username"]
+
+h3 = "Användare som gillar denna kategorin:"
+- users_liking.each do |user|
+    a href="/users/#{user["id"]}/show" = user["username"]
