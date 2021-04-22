@@ -8,18 +8,16 @@ enable :sessions
 
 include Model
 
-#Felhantera lösenord, max 8 tecken!
-#Validera user-input?
+#Att göra: när användare/kategori raderas, ta bort alla likes rel
 
-#Övriga routes
+# Visa startsida
+#
 get('/') do
-    redirect('/home')
+    slim(:index)
 end
 
-get('/home') do
-    slim(:"helper/home")
-end
-
+# Sida som informerar användaren om nånting
+# 
 get('/inform') do
     message = session[:message]
     link_text = session[:link_text]
@@ -29,12 +27,16 @@ get('/inform') do
         #specifiera en beskrivning av felmeddelandet så visas detta som default
         message = "Det har uppstått ett fel, vänligen kontakta Ludvig Sandh."
         link_text = "Hem"
-        link = "/home"
+        link = "/"
     end
     slim(:"helper/inform", locals: {message: message, link_text: link_text, link: link})
 end
 
-#Omdirigerar användaren till en sida som visar information till användaren
+# Omdirigerar användaren till en sida som visar information till användaren
+#
+# @param [String] mes meddelande som ska visas
+# @param [String] link_t länktext som ska visas
+# @param [String] link routen som användaren ska skickas till
 def display_information(mes, link_t, link)
     session[:message] = mes
     session[:link_text] = link_t
@@ -42,7 +44,8 @@ def display_information(mes, link_t, link)
     redirect('/inform')
 end
 
-#Categories
+# Visar alla kategorier som finns
+#
 get('/categories') do
     #Hämta alla kategorier som finns
     categories = get_all_categories()
@@ -51,6 +54,8 @@ get('/categories') do
     slim(:"categories/index", locals: {categories: categories})
 end
 
+# Visar ett formulär som användaren kan fylla i för att skapa en ny kategori
+# 
 get('/categories/new') do
     #Detta får bara inloggade användare göra
     confirm_logged_in()
@@ -59,7 +64,15 @@ get('/categories/new') do
     slim(:"categories/new")
 end
 
-#Här visar vi alla tider för en viss kategori
+# Visar alla tider för en viss kategori
+# 
+# @param [Integer] :id id:t för kategorin vi tittar på
+# @see Model#get_all_times_from_category
+# @see Model#get_category
+# @see Model#sort_times
+# @see Model#get_username_with_id
+# @see Model#get_rel
+# @see Model#get_all_users_liking_category
 get('/categories/:id') do
     category_id = params[:id]
     
@@ -103,6 +116,12 @@ get('/categories/:id') do
     slim(:"categories/show", locals: {times: times, cat: cat, creator: creator, does_like: does_like, users_liking: users_liking, user_id: user_id})
 end
 
+# Visar ett formulär där man kan ändra ett kategorinamn
+# 
+# @param [Integer] :id id:t för kategorin vi tittar på
+# @see get_user_id
+# @see Model#get_category
+# @see display_information
 get('/categories/:id/edit') do
     #Hämta kategori-id som vi hanterar (från parametrar)
     category_id = params[:id]
@@ -122,6 +141,15 @@ get('/categories/:id/edit') do
     end
 end
 
+# Uppdaterar ett kategorinamn
+# 
+# @param [Integer] :id id:t för kategorin vi tittar på
+# @see get_user_id
+# @see Model#get_category
+# @see display_information
+# @see Model#name_accepted?
+# @see Model#exists_category_name?
+# @see Model#update_category_name
 post('/categories/:id/update') do
     #Hämta kategori-id som vi hanterar (från parametrar)
     category_id = params[:id]
@@ -160,6 +188,13 @@ post('/categories/:id/update') do
     end
 end
 
+# Raderar en kategori
+# 
+# @param [Integer] :id id:t för kategorin vi tittar på
+# @see get_user_id
+# @see Model#get_category
+# @see display_information
+# @see Model#delete_category
 post('/categories/:id/delete') do
     #Hämta kategori-id som vi hanterar (från parametrar)
     category_id = params[:id]
@@ -183,6 +218,14 @@ post('/categories/:id/delete') do
     redirect("/categories")
 end
 
+# Skapar en ny kategori i databasen
+# 
+# @see get_user_id
+# @see name_accepted?
+# @see Model#exists_category_name?
+# @see Model#insert_category
+# @see Model#insert_category
+# @see display_information
 post('/categories') do
     #Detta får bara inloggade användare göra
     user_id = get_user_id()
@@ -209,7 +252,11 @@ post('/categories') do
     end
 end
 
-#Times
+# Visar alla tider som finns i en kategori
+# 
+# @param [Integer] :category_id id:t för kategorin som tiden finns i
+# @see confirm_logged_in
+# @see Model#get_category
 get('/times/:category_id/new') do
     #Hämta vilket kategori-id som användaren vill lägga till en tid för
     category_id = params[:category_id]
@@ -224,6 +271,13 @@ get('/times/:category_id/new') do
     slim(:"times/new", locals: {category: category})
 end
 
+# Visar detaljer om en specifik tid
+# 
+# @param [Integer] :category_id id:t för kategorin som tiden finns i
+# @param [Integer] :time_id id:t för tiden som vi kollar på
+# @see Model#get_category
+# @see Model#get_time
+# @see Model#get_username_with_id
 get('/times/:category_id/:time_id') do
     #Detta får vem som helst göra
 
@@ -247,7 +301,14 @@ get('/times/:category_id/:time_id') do
     slim(:"times/show", locals: {cat: category, time: time, username: username})
 end
 
-#Entiteten "Times" har attributen user_id, category_id, date (datum då tiden skapad), time (själva tiden)
+# Skapar en ny tid
+# 
+# @param [Integer] :category_id id:t för kategorin som tiden ska läggas till i
+# @see get_user_id
+# @see Model#get_form_time_info
+# @see Model#check_time_input_accepted
+# @see Model#time_to_string
+# @see Model#insert_time
 post('/times/:category_id') do
     #Hämta vilket kategori-id som användaren vill lägga till en tid för
     category_id = params[:category_id]
@@ -273,6 +334,14 @@ post('/times/:category_id') do
     redirect("/categories/#{category_id}")
 end
 
+# Raderar en tid
+# 
+# @param [Integer] :category_id id:t för kategorin som tiden finns i
+# @param [Integer] :time_id id:t för tiden som ska raderas
+# @see get_user_id
+# @see Model#get_time_user_id
+# @see display_information
+# @see Model#delete_time
 post('/times/:category_id/:time_id/delete') do
     #Hämta tids-id som vi hanterar (från parametrar)
     time_id = params[:time_id]
@@ -298,13 +367,18 @@ post('/times/:category_id/:time_id/delete') do
     redirect("/categories/#{category_id}")
 end
 
-
-#Users
-
+# Visar sidan där användaren kan logga in med hjälp av ett formulär
+# 
 get('/login') do
     slim(:"auth/login")
 end
 
+# Loggar in användaren
+#
+# @param [String] :username_input användarens inskrivna användarnamn
+# @param [String] :password_input användarens inskrivna lösenord
+# @see Model#get_user_with_username
+# @see display_information
 post('/login') do
     #Hämta användarnamnet som användaren skrev in (input i formuläret)
     username_input = params[:username_input]
@@ -337,7 +411,7 @@ post('/login') do
             session[:username] = username_input
 
             #Informera användaren att hen är inloggad
-            display_information("Välkommen tillbaka #{username_input}! Du är nu inloggad.", "Ta mig till startsidan", "/home")
+            display_information("Välkommen tillbaka #{username_input}! Du är nu inloggad.", "Ta mig till startsidan", "/")
         else
             #Lösenordet stämde inte
             display_information("Du har skrivit in fel användarnamn eller lösenord", "Prova igen", "/login")
@@ -347,16 +421,30 @@ post('/login') do
     #metoden display_information redirectar användaren så en redirect här behövs inte
 end
 
+# Loggar ut användaren
+#
 get('/logout') do
     session[:user_id] = nil
     session[:username] = nil
     slim(:"auth/logout")
 end
 
+# Visar sidan där användare kan registrera sig med hjälp av ett formulär
+#
 get('/users/new') do
     slim(:"users/new")
 end
 
+# Lägger till en ny användare i databasen
+#
+# @param [String] :username_input användarens inskrivna användarnamn
+# @param [String] :password_input användarens inskrivna lösenord
+# @param [String] :password_confirm_input användarens inskrivna bekräftade lösenord
+# @see Model#exists_username?
+# @see Model#name_accepted?
+# @see display_information
+# @see Model#insert_user
+# @see Model#get_user_id_with_username
 post('/users') do
     #Hämta användarnamnet som användaren skrev in (input i formuläret)
     username_input = params[:username_input]
@@ -391,7 +479,7 @@ post('/users') do
             session[:user_id] = user_id
             session[:username] = username_input
 
-            display_information("Hej #{username_input}! Du har nu registrerat dig!", "Ta mig till startsidan", "/home")
+            display_information("Hej #{username_input}! Du har nu registrerat dig!", "Ta mig till startsidan", "/")
         else
             display_information("Lösenordet stämde inte överens med det bekräftade lösenordet", "Prova igen", "/users/new")
         end
@@ -402,6 +490,14 @@ post('/users') do
     #metoden display_information redirectar användaren så en redirect här behövs inte
 end
 
+# Visar profilen för en användare
+#
+# @param [String] :id användarens id
+# @see get_user
+# @see Model#get_all_categories_by_user_id?
+# @see Model#get_all_times_by_user_id
+# @see Model#get_category_name
+# @see Model#get_all_categories_liked_by_user
 get('/users/:id/show') do
     #Hämta användar-id:t som vi vill kolla profilen för
     profile_user_id = params[:id]
