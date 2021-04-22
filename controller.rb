@@ -6,14 +6,7 @@ require_relative './model.rb'
 
 enable :sessions
 
-#1. Skapa ER + databas som kan hålla användare och tider. Fota ER-diagram, 
-#   lägg i misc-mapp
-#2. Skapa ett formulär för att registrerara användare.
-#3. Skapa ett formulär för att logga in. Om användaren lyckas logga  
-#   in: Spara information i session som håller koll på att användaren är inloggad
-#4. Låt inloggad användare skapa todos i ett formulär (på en ny sida ELLER på sidan som visar todos.).
-#5. Låt inloggad användare updatera och ta bort sina formulär.
-#6. Lägg till felhantering (meddelande om man skriver in fel user/lösen)
+include Model
 
 #Felhantera lösenord, max 8 tecken!
 #Validera user-input?
@@ -149,13 +142,21 @@ post('/categories/:id/update') do
     new_cat_name = params[:new_name]
 
     #Kontrollera att det nya kategorinamnet är tillåtet
-    if kategorinamn_accepted?(new_cat_name)
+    if name_accepted?(new_cat_name)
 
-        #Lägg in kategorin i databasen, och omdirigera användaren till kategorisidan
-        update_category_name(new_cat_name, category_id)
+        #Kontrollera att det inte redan finns en kategori med detta namnet
+        if !exists_category_name?(new_cat_name)
 
-        #Skicka tillbaka användaren till kategorilistan
-        redirect("/categories/#{category_id}")
+            #Lägg in kategorin i databasen, och omdirigera användaren till kategorisidan
+            update_category_name(new_cat_name, category_id)
+
+            #Skicka användaren till den nyligen skapade kategorin
+            redirect("/categories/#{category_id}")
+        else
+            display_information("Det finns redan en kategori med detta namnet", "Prova igen", "/categories/new")
+        end
+    else
+        display_information("Ditt kategorinamn får inte vara tomt eller bestå av endast blanksteg", "Prova igen", "/categories/new")
     end
 end
 
@@ -187,14 +188,24 @@ post('/categories') do
     user_id = get_user_id()
 
     #Hämta data från formuläret
-    kategorinamn = params[:name]
+    cat_name = params[:name]
 
-    #Kontrollera att kategorinamnet är tillåtet
-    if kategorinamn_accepted?(kategorinamn)
+    #Kontrollera att det nya kategorinamnet är tillåtet
+    if name_accepted?(cat_name)
 
-        #Lägg in kategorin i databasen, och omdirigera användaren till kategorisidan
-        insert_category(kategorinamn, user_id)
-        redirect('/categories')
+        #Kontrollera att det inte redan finns en kategori med detta namnet
+        if !exists_category_name?(cat_name)
+
+            #Lägg in kategorin i databasen, och omdirigera användaren till kategorisidan
+            insert_category(cat_name, user_id)
+
+            #Skicka tillbaka användaren till kategorilistan
+            redirect('/categories')
+        else
+            display_information("Det finns redan en kategori med detta namnet", "Prova igen", "/categories/new")
+        end
+    else
+        display_information("Ditt kategorinamn får inte vara tomt eller bestå av endast blanksteg", "Prova igen", "/categories/new")
     end
 end
 
@@ -288,7 +299,6 @@ post('/times/:category_id/:time_id/delete') do
 end
 
 
-
 #Users
 
 get('/login') do
@@ -357,12 +367,20 @@ post('/users') do
     #Hämta det bekräftade lösenordet som användaren skrev in
     password_confirm_input = params[:password_confirm_input]
 
-    #Hämta användaren som har det inskrivna användarnamnet
-    user = get_user_with_username(username_input)
-
     #Om det inte fanns någon användare med detta användarnamnet redan
-    if user == nil
+    if !exists_username?(username_input)
         if password_input == password_confirm_input
+
+            #Kontrollera att användarnamnet är accepterat
+            if !name_accepted?(username_input)
+                display_information("Ditt användarnamn får inte vara tomt eller bestå av endast blanksteg", "Prova igen", "/users/new")
+            end
+
+            #Kontrollera att lösenordet är accepterat
+            if !password_accepted?(password_input)
+                display_information("Ditt lösenord måste bestå av minst 8 distinkta tecken", "Prova igen", "/users/new")
+            end
+
             #Låt BCrypt hasha + salta lösenordet
             password_digest = BCrypt::Password.create(password_input)
 

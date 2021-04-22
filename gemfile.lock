@@ -1,0 +1,35 @@
+GIT
+  remote: https://github.com/chrisb/yard-sinatra
+  revision: 226e048f615bdf068e65010d47f8cb143fd08865
+  specs:
+    yard-sinatra (2.0.0.beta)
+      activesupport
+      yard (~> 0.7)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    activesupport (6.1.3.1)
+      concurrent-ruby (~> 1.0, >= 1.0.2)
+      i18n (>= 1.6, < 2)
+      minitest (>= 5.1)
+      tzinfo (~> 2.0)
+      zeitwerk (~> 2.3)
+    concurrent-ruby (1.1.8)
+    i18n (1.8.10)
+      concurrent-ruby (~> 1.0)
+    minitest (5.14.4)
+    tzinfo (2.0.4)
+      concurrent-ruby (~> 1.0)
+    yard (0.9.26)
+    zeitwerk (2.4.2)
+
+PLATFORMS
+  x64-mingw32
+
+DEPENDENCIES
+  yard
+  yard-sinatra!
+
+BUNDLED WITH
+   2.2.16
