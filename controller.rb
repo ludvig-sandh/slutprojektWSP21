@@ -16,6 +16,7 @@ enable :sessions
 #6. Lägg till felhantering (meddelande om man skriver in fel user/lösen)
 
 #Felhantera lösenord, max 8 tecken!
+#Validera user-input?
 
 #Övriga routes
 get('/') do
@@ -41,7 +42,7 @@ get('/inform') do
 end
 
 #Omdirigerar användaren till en sida som visar information till användaren
-def display_information(mes, link_t, link) #FLYTTA TILL CONTROLLER
+def display_information(mes, link_t, link)
     session[:message] = mes
     session[:link_text] = link_t
     session[:link] = link
@@ -50,9 +51,8 @@ end
 
 #Categories
 get('/categories') do
-    #Koppling till databasen, och hämta alla kategorier
-    db = connect_to_db()
-    categories = db.execute('SELECT * FROM Categories')
+    #Hämta alla kategorier som finns
+    categories = get_all_categories()
     
     #Visa dem för användaren
     slim(:"categories/index", locals: {categories: categories})
@@ -60,7 +60,7 @@ end
 
 get('/categories/new') do
     #Detta får bara inloggade användare göra
-    check_logged_in()
+    confirm_logged_in()
 
     #Visa formuläret för den som var inloggad
     slim(:"categories/new")
@@ -71,12 +71,13 @@ get('/categories/:id') do
     category_id = params[:id]
     
     #Hämta alla tider som finns sparade för denna kategorin
-    db = connect_to_db()
-    times = db.execute('SELECT * FROM Times WHERE category_id = ?', category_id)
-    cat = db.execute('SELECT * FROM Categories WHERE id = ?', category_id).first
+    times = get_all_times_from_category(category_id)
+    
+    #Hämta information om kategorin
+    cat = get_category(category_id)
 
     #Hämta användarnamnet bakom kategorin
-    creator = db.execute('SELECT username FROM Users WHERE id = ?', cat["user_id"]).first["username"]
+    creator = get_username_with_id(cat["user_id"])["username"]
     
     #Sorterar alla tider så att ranklistan ordnas efter dem
     sort_times(times)
@@ -86,7 +87,7 @@ get('/categories/:id') do
         user_id = time["user_id"]
         
         #Från id:t - hämta användarnamnet och spara det också som en nyckel (par + värde) i vår times-dictionary
-        username = db.execute('SELECT username FROM Users WHERE id = ?', user_id).first
+        username = get_username_with_id(user_id)
 
         time["username"] = username["username"]
     end
@@ -96,14 +97,14 @@ get('/categories/:id') do
     does_like = false
     if user_id != nil
         #Se om den här användaren gillar denna kategorin eller inte
-        like = db.execute("SELECT * FROM users_categories_rel WHERE user_id = ? AND category_id = ?", user_id, category_id).first
+        like = get_rel(user_id, category_id)
         if like != nil
             does_like = true
         end
     end
 
     #Hämta alla användare som gillar den här kategorin med en inner join
-    users_liking = db.execute("SELECT * FROM users_categories_rel INNER JOIN Users ON users_categories_rel.user_id = Users.id WHERE category_id = ?", category_id)
+    users_liking = get_all_users_liking_category(category_id)
 
     #Visa ranklistan för användaren
     slim(:"categories/show", locals: {times: times, cat: cat, creator: creator, does_like: does_like, users_liking: users_liking, user_id: user_id})
@@ -113,21 +114,16 @@ get('/categories/:id/edit') do
     #Hämta kategori-id som vi hanterar (från parametrar)
     category_id = params[:id]
 
-    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
-    route_back = "/categories/#{category_id}"
-    session[:route_back] = route_back
-    
     #Hämta användar-id: (bara inloggade användare får ändra på en kategori)
     user_id = get_user_id()
     
     #Hämta user_id för den som äger denna kategorin
-    db = connect_to_db()
-    category = db.execute('SELECT * FROM Categories WHERE id = ?', category_id).first
+    category = get_category(category_id)
     owner_id = category["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
     if user_id != owner_id
-        display_information("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorin", route_back)
+        display_information("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorin", "/categories/#{category_id}")
     else
         slim(:"categories/edit", locals: {category: category})
     end
@@ -136,22 +132,17 @@ end
 post('/categories/:id/update') do
     #Hämta kategori-id som vi hanterar (från parametrar)
     category_id = params[:id]
-
-    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
-    route_back = "/categories/#{category_id}"
-    session[:route_back] = route_back
     
     #Hämta användar-id: (bara inloggade användare får ändra på en kategori)
     user_id = get_user_id()
     
     #Hämta user_id för den som äger denna kategorin
-    db = connect_to_db()
-    owner = db.execute('SELECT user_id FROM Categories WHERE id = ?', category_id).first
-    owner_id = owner["user_id"]
+    category = get_category(category_id)
+    owner_id = category["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
     if user_id != owner_id
-        display_information("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorier", route_back)
+        display_information("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorier", "/categories/#{category_id}")
     end
     
     #Användaren är authorized. Hämta datan, dvs det nya namnet på kategorin, från formuläret
@@ -161,7 +152,7 @@ post('/categories/:id/update') do
     if kategorinamn_accepted?(new_cat_name)
 
         #Lägg in kategorin i databasen, och omdirigera användaren till kategorisidan
-        db.execute('UPDATE Categories SET name = ? WHERE id = ?', new_cat_name, category_id)
+        update_category_name(new_cat_name, category_id)
 
         #Skicka tillbaka användaren till kategorilistan
         redirect("/categories/#{category_id}")
@@ -171,26 +162,20 @@ end
 post('/categories/:id/delete') do
     #Hämta kategori-id som vi hanterar (från parametrar)
     category_id = params[:id]
-
-    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
-    route_back = "/categories/#{category_id}"
-    session[:route_back] = route_back
     
     #Hämta användar-id: (bara inloggade användare får ändra på en kategori)
     user_id = get_user_id()
     
     #Hämta user_id för den som äger denna kategorin
-    db = connect_to_db()
-    owner = db.execute('SELECT user_id FROM Categories WHERE id = ?', category_id).first
-    owner_id = owner["user_id"]
+    category = get_category(category_id)
+    owner_id = category["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som får radera den
     if user_id != owner_id
-        display_information("Du är inte skaparen av denna kategorin. Du kan inte radera en kategori som någon annan äger", "Tillbaka till kategorier", route_back)
+        display_information("Du är inte skaparen av denna kategorin. Du kan inte radera en kategori som någon annan äger", "Tillbaka till kategorier", "/categories/#{category_id}")
     else
         #Vi raderar kategorin, samt alla tider som hör till denna kategorin
-        db.execute("DELETE FROM Categories WHERE id=?", category_id)
-        db.execute("DELETE FROM Times WHERE category_id = ?", category_id)
+        delete_category(category_id)
     end
     
     #Skicka tillbaka användaren till kategorilistan
@@ -198,10 +183,6 @@ post('/categories/:id/delete') do
 end
 
 post('/categories') do
-    #Backup-route: dvs var ska användaren skickas om den inte får authorization?
-    route_back = "/categories"
-    session[:route_back] = route_back
-
     #Detta får bara inloggade användare göra
     user_id = get_user_id()
 
@@ -212,10 +193,7 @@ post('/categories') do
     if kategorinamn_accepted?(kategorinamn)
 
         #Lägg in kategorin i databasen, och omdirigera användaren till kategorisidan
-        db = connect_to_db()
-        p kategorinamn
-        p user_id
-        db.execute('INSERT INTO Categories (name, user_id) VALUES (?, ?)', kategorinamn, user_id)
+        insert_category(kategorinamn, user_id)
         redirect('/categories')
     end
 end
@@ -225,16 +203,11 @@ get('/times/:category_id/new') do
     #Hämta vilket kategori-id som användaren vill lägga till en tid för
     category_id = params[:category_id]
 
-    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
-    route_back = "/categories/#{category_id}"
-    session[:route_back] = route_back
-
     #Detta får bara inloggade användare göra
-    check_logged_in()
+    confirm_logged_in()
 
     #Hämta kategorinamnet för denna kategorin
-    db = connect_to_db()
-    category = db.execute('SELECT * FROM Categories WHERE id = ?', category_id).first
+    category = get_category(category_id)
 
     #Visa formuläret för den som är inloggad
     slim(:"times/new", locals: {category: category})
@@ -247,17 +220,16 @@ get('/times/:category_id/:time_id') do
     category_id = params[:category_id]
 
     #Hämta kategorinamnet för denna kategorin
-    db = connect_to_db()
-    category = db.execute('SELECT * FROM Categories WHERE id = ?', category_id).first
+    category = get_category(category_id)
 
     #Hämta vilket tids-id som tiden har
     time_id = params[:time_id]
 
     #Hämta data om denna tiden
-    time = db.execute('SELECT * FROM Times WHERE id = ?', time_id).first
+    time = get_time(time_id)
 
     #Från id:t - hämta användarnamnet och skicka med det också i locals
-    username = db.execute('SELECT username FROM Users WHERE id = ?', time["user_id"]).first
+    username = get_username_with_id(time["user_id"])
 
     #Visa denna tiden i mer detalj
     #Här vill vi också att vi ska se användarnamnet sen, och inte användar-id:t
@@ -268,10 +240,6 @@ end
 post('/times/:category_id') do
     #Hämta vilket kategori-id som användaren vill lägga till en tid för
     category_id = params[:category_id]
-
-    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
-    route_back = "/categories/#{category_id}"
-    session[:route_back] = route_back
 
     #Detta får bara inloggade användare göra
     user_id = get_user_id()
@@ -289,8 +257,7 @@ post('/times/:category_id') do
     date = Time.now.strftime("%A, %B %d %Y - %k:%M:%S")
 
     #lägg till dbtråd som sparar tiden
-    db = connect_to_db()
-    db.execute('INSERT INTO Times (time, date, category_id, user_id) VALUES (?, ?, ?, ?)', time_string, date, category_id, user_id)
+    insert_time(time_string, date, category_id, user_id)
 
     redirect("/categories/#{category_id}")
 end
@@ -301,25 +268,19 @@ post('/times/:category_id/:time_id/delete') do
 
     #Hämta kategori-id:t
     category_id = params[:category_id]
-    
-    #Backup-route: dvs var ska användaren skickas om den inte fick authorization?
-    route_back = "/times/#{category_id}/#{time_id}"
-    session[:route_back] = route_back
 
     #Hämta användar-id: (bara inloggade användare får ändra på en tid)
     user_id = get_user_id()
     
     #Hämta user_id för den som äger denna tiden
-    db = connect_to_db()
-    owner = db.execute('SELECT user_id FROM Times WHERE id = ?', time_id).first
-    owner_id = owner["user_id"]
+    owner_id = get_time_user_id(time_id)["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna tiden som får radera den
     if user_id != owner_id
-        display_information("Du är inte skaparen av denna tiden. Du kan inte radera en tid som tillhör någon annan", "Tillbaka till tiden", route_back)
+        display_information("Du är inte skaparen av denna tiden. Du kan inte radera en tid som tillhör någon annan", "Tillbaka till tiden", "/times/#{category_id}/#{time_id}")
     else
         #Vi raderar tiden
-        db.execute("DELETE FROM Times WHERE id=?", time_id)
+        delete_time(time_id)
     end
     
     #Skicka tillbaka användaren till tidslistan
@@ -341,26 +302,23 @@ post('/login') do
     #Hämta lösenordet som användaren skrev in
     password_input = params[:password_input]
 
-    #Hämta referens till databasen
-    db = connect_to_db()
-
     #Hämta det krypterade lösenordet från användaren som har det inskrivna användarnamnet
-    result = db.execute("SELECT * FROM Users WHERE username=?", username_input).first
+    user = get_user_with_username(username_input)
 
     #Om det inte fanns någon användare med detta användarnamnet, informera användaren
-    if result.empty?
+    if user == nil
         display_information("Du har skrivit in fel användarnamn eller lösenord", "Prova igen", "/login")
     else
         
         #Det lagrade krypterade lösenordet för användaren
-        password_digest = result["pw_digest"]
+        password_digest = user["pw_digest"]
 
         #Låt BCrypt hantera det krypterade lösenordet så att vi kan jämföra det sedan
         #Om det inskrivna lösenordet stämmer överens med BCrypts beräknade jämförelsebara värde
         if BCrypt::Password.new(password_digest) == password_input
 
             #Hämta användar-id hos usern
-            user_id = result["id"]
+            user_id = user["id"]
 
             #Spara användar-id i sessions så att användaren kan fortsätta vara inloggad medan hen besöker hemsidan
             session[:user_id] = user_id
@@ -399,22 +357,19 @@ post('/users') do
     #Hämta det bekräftade lösenordet som användaren skrev in
     password_confirm_input = params[:password_confirm_input]
 
-    #Hämta referens till databasen
-    db = connect_to_db()
-
     #Hämta användaren som har det inskrivna användarnamnet
-    result = db.execute("SELECT id FROM Users WHERE username=?", username_input).first
+    user = get_user_with_username(username_input)
 
     #Om det inte fanns någon användare med detta användarnamnet redan
-    if result == nil
+    if user == nil
         if password_input == password_confirm_input
             #Låt BCrypt hasha + salta lösenordet
             password_digest = BCrypt::Password.create(password_input)
 
-            db.execute("INSERT INTO Users (username, pw_digest) VALUES (?, ?)", username_input, password_digest)
+            insert_user(username_input, password_digest)
             
             #Hitta användarens id från databasen och spara det i session
-            user_id = db.execute("SELECT id FROM Users WHERE username=?", username_input).first["id"]
+            user_id = get_user_id_with_username(username_input)["id"]
             session[:user_id] = user_id
             session[:username] = username_input
 
@@ -433,27 +388,24 @@ get('/users/:id/show') do
     #Hämta användar-id:t som vi vill kolla profilen för
     profile_user_id = params[:id]
 
-    #Skapa en instans av databasen
-    db = connect_to_db()
-
     #Hämta information om profilen
-    user = db.execute("SELECT * FROM Users WHERE id = ?", profile_user_id).first
+    user = get_user(profile_user_id)
 
     #Hämta alla kategorier som användaren skapat
-    created_cats = db.execute("SELECT * FROM Categories WHERE user_id = ?", profile_user_id)
+    created_cats = get_all_categories_by_user_id(profile_user_id)
 
     #Hämta alla tider som användaren skickat in
-    submitted_times = db.execute("SELECT * FROM Times WHERE user_id = ?", profile_user_id)
+    submitted_times = get_all_times_by_user_id(profile_user_id)
 
     #Dessa sparar än så länge inte tidens kategoris namn, så vi kan
     #fixa det genom att loopa igenom varje tid och hämta det från db
     submitted_times.each do |time|
-        cat_name = db.execute("SELECT name FROM Categories WHERE id = ?", time["category_id"]).first
+        cat_name = get_category_name(time["category_id"])
         time["category_name"] = cat_name["name"]
     end
 
     #Hämta alla kategorier som den här användaren gillar med en inner join
-    categories_liking = db.execute("SELECT * FROM users_categories_rel INNER JOIN Categories ON users_categories_rel.category_id = Categories.id WHERE users_categories_rel.user_id = ?", user["id"])
+    categories_liking = get_all_categories_liked_by_user(user["id"])
 
     slim(:"users/show", locals: {user: user, created_cats: created_cats, submitted_times: submitted_times, categories_liking: categories_liking})
 end
@@ -462,11 +414,8 @@ get('/users/:id/edit') do
     #Hämta användar-id:t som vi vill kolla profilen för
     profile_user_id = params[:id]
 
-    #Skapa en instans av databasen
-    db = connect_to_db()
-
     #Hämta information om profilen
-    user = db.execute("SELECT * FROM Users WHERE id = ?", profile_user_id).first
+    user = get_user(profile_user_id)
 
     slim(:"users/edit", locals: {user: user})
 end
@@ -491,10 +440,10 @@ post('/users/:id/update') do
         db = connect_to_db()
 
         #Hämta det krypterade lösenordet från användaren
-        result = db.execute("SELECT * FROM Users WHERE id = ?", user_id).first
+        user = get_user(user_id)
 
         #Det lagrade krypterade lösenordet för användaren
-        password_digest = result["pw_digest"]
+        password_digest = user["pw_digest"]
 
         #Låt BCrypt hantera det krypterade lösenordet så att vi kan jämföra det sedan
         #Om det inskrivna lösenordet stämmer överens med BCrypts beräknade jämförelsebara värde
@@ -506,7 +455,7 @@ post('/users/:id/update') do
                 password_digest = BCrypt::Password.create(new_password_input)
                 
                 #Uppdatera det nya lösenordet i databasen
-                db.execute("UPDATE Users SET pw_digest = ? WHERE id = ?", password_digest, session[:user_id])
+                update_password(password_digest, session[:user_id])
 
                 #Informera användaren att hen har bytt lösenord
                 display_information("Du har nu ändrat lösenordet.", "Tillbaka", "/users/#{user_id}/show")
@@ -532,21 +481,36 @@ post('/likes/:user_id/:category_id') do
     user_id = params[:user_id]
     category_id = params[:category_id]
 
-    #Hämta koppling till db
-    db = connect_to_db()
-
     #Se om det finns sparad data om den här gillningen
-    like = db.execute("SELECT * FROM users_categories_rel WHERE user_id = ? AND category_id = ?", user_id, category_id).first
-
-    p like: like
-
+    like = get_rel(user_id, category_id)
+    
     #Om användaren redan gillar den här kategorin, och vill "ogilla" den
     if like != nil
         #"ogilla" kategorin, alltså radera den här relationen
-        db.execute("DELETE FROM users_categories_rel WHERE user_id = ? AND category_id = ?", user_id, category_id)
+        delete_rel(user_id, category_id)
     else
         #"gilla" kategorin, lägg till relationen mellan user och kategori
-        db.execute("INSERT INTO users_categories_rel (user_id, category_id) VALUES (?, ?)", user_id, category_id)
+        insert_rel(user_id, category_id)
     end
     redirect("/categories/#{category_id}")
+end
+
+
+#Hjälpfunktioner
+
+#Hämta användar-id:t hos den inloggade användaren (från sessions)
+def get_user_id()
+    return session[:user_id]
+end
+
+#Se till att användaren är inloggad, annars visas meddelande
+def confirm_logged_in()
+    if session[:user_id] == nil
+        display_information("Du är inte inloggad, logga in eller registrera dig för att kunna göra detta", "Hem", "/login")
+    end
+end
+
+#Hämta tids-datan från formuläret där man skickar in tider
+def get_form_time_info()
+    return [params[:hours], params[:minutes], params[:seconds], params[:fractions].to_i].map(&:to_i)
 end
