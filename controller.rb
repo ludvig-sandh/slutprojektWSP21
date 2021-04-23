@@ -8,7 +8,7 @@ enable :sessions
 
 include Model
 
-#Att göra: när användare/kategori raderas, ta bort alla likes rel
+#Att göra: när användare/kategori raderas, ta bort alla likes rel. Fixa projektplan.md
 
 # Visa startsida
 #
@@ -493,7 +493,7 @@ end
 # Visar profilen för en användare
 #
 # @param [String] :id användarens id
-# @see get_user
+# @see Model#get_user
 # @see Model#get_all_categories_by_user_id?
 # @see Model#get_all_times_by_user_id
 # @see Model#get_category_name
@@ -524,6 +524,10 @@ get('/users/:id/show') do
     slim(:"users/show", locals: {user: user, created_cats: created_cats, submitted_times: submitted_times, categories_liking: categories_liking})
 end
 
+# Visar formuläret där användaren kan ändra sitt lösenord
+#
+# @param [id] :id användarens user-id
+# @see Model#get_user
 get('/users/:id/edit') do
     #Hämta användar-id:t som vi vill kolla profilen för
     profile_user_id = params[:id]
@@ -534,6 +538,12 @@ get('/users/:id/edit') do
     slim(:"users/edit", locals: {user: user})
 end
 
+# Uppdatera användarens lösenord
+#
+# @param [Integer] :id användarens user-id
+# @see display_information
+# @see Model#get_user
+# @see Model#update_password
 post('/users/:id/update') do
     #Hämta användar-id:t som vi vill ändra profilen för
     profile_user_id = params[:id].to_i
@@ -549,9 +559,6 @@ post('/users/:id/update') do
         current_password_input = params[:current_password]
         new_password_input = params[:new_password]
         confirm_new_password_input = params[:confirm_new_password]
-
-        #Hämta referens till databasen
-        db = connect_to_db()
 
         #Hämta det krypterade lösenordet från användaren
         user = get_user(user_id)
@@ -585,6 +592,14 @@ post('/users/:id/update') do
     end
 end
 
+# Skapa en "Like", dvs en relation mellan entiteten Users och Cateories
+#
+# @param [Integer] :user_id användarens user-id
+# @param [Integer] :category_id kategorins id
+# @see display_information
+# @see Model#get_rel
+# @see Model#delete_rel
+# @see Model#insert_rel
 post('/likes/:user_id/:category_id') do
     #Om användaren inte är inloggad än
     if session[:user_id] == nil
@@ -610,21 +625,24 @@ post('/likes/:user_id/:category_id') do
 end
 
 
-#Hjälpfunktioner
 
-#Hämta användar-id:t hos den inloggade användaren (från sessions)
+# Hämta användar-id:t hos den inloggade användaren (från sessions)
+# 
 def get_user_id()
     return session[:user_id]
 end
 
-#Se till att användaren är inloggad, annars visas meddelande
+# Ser till att användaren är inloggad, annars visas meddelande
+#
+# @see display_information
 def confirm_logged_in()
     if session[:user_id] == nil
         display_information("Du är inte inloggad, logga in eller registrera dig för att kunna göra detta", "Hem", "/login")
     end
 end
 
-#Hämta tids-datan från formuläret där man skickar in tider
+# Hämtar tids-datan från formuläret där man skickar in tider
+# 
 def get_form_time_info()
     return [params[:hours], params[:minutes], params[:seconds], params[:fractions].to_i].map(&:to_i)
 end
