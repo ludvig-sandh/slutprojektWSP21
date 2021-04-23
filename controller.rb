@@ -8,8 +8,6 @@ enable :sessions
 
 include Model
 
-#Att göra: när användare/kategori raderas, ta bort alla likes rel. Fixa projektplan.md
-
 # Visa startsida
 #
 get('/') do

@@ -85,7 +85,20 @@
   
 </div>
 
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    
+<p>Model-delen av applikationen. Applikationen följer MVC-standarden</p>
 
+
+  </div>
+</div>
+<div class="tags">
+  
+
+
+
+</div>
 
 
 
@@ -166,7 +179,7 @@
 
   
     <span class="summary_desc"><div class='inline'>
-<p>Radera en kategori.</p>
+<p>Radera en kategori, samt alla tider och likes som hör till kategorin.</p>
 </div></span>
   
 </li>
@@ -972,8 +985,6 @@
       <pre class="lines">
 
 
-61
-62
 63
 64
 65
@@ -993,10 +1004,12 @@
 79
 80
 81
-82</pre>
+82
+83
+84</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 61</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 63</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_check_time_input_accepted'>check_time_input_accepted</span><span class='lparen'>(</span><span class='id identifier rubyid_time_input'>time_input</span><span class='comma'>,</span> <span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
     <span class='comment'>#Kontrollerar om någon tid är negativ
@@ -1066,15 +1079,15 @@
       <pre class="lines">
 
 
-6
-7
 8
 9
 10
-11</pre>
+11
+12
+13</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 6</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 8</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_connect_to_db'>connect_to_db</span><span class='lparen'>(</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_path'>path</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>db/snabbspringning.db</span><span class='tstring_end'>&quot;</span></span>
@@ -1099,7 +1112,7 @@
 </h3><div class="docstring">
   <div class="discussion">
     
-<p>Radera en kategori</p>
+<p>Radera en kategori, samt alla tider och likes som hör till kategorin</p>
 
 
   </div>
@@ -1142,19 +1155,21 @@
       <pre class="lines">
 
 
-214
-215
 216
 217
-218</pre>
+218
+219
+220
+221</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 214</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 216</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_delete_category'>delete_category</span><span class='lparen'>(</span><span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span><span class='period'>.</span><span class='id identifier rubyid_execute'>execute</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>DELETE FROM Categories WHERE id=?</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span><span class='period'>.</span><span class='id identifier rubyid_execute'>execute</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>DELETE FROM Times WHERE category_id = ?</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_db'>db</span><span class='period'>.</span><span class='id identifier rubyid_execute'>execute</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>DELETE FROM users_categories_rel WHERE category_id = ?</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -1232,13 +1247,13 @@
       <pre class="lines">
 
 
-374
-375
-376
-377</pre>
+377
+378
+379
+380</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 374</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 377</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_delete_rel'>delete_rel</span><span class='lparen'>(</span><span class='id identifier rubyid_user_id'>user_id</span><span class='comma'>,</span> <span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -1304,13 +1319,13 @@
       <pre class="lines">
 
 
-257
-258
-259
-260</pre>
+260
+261
+262
+263</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 257</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 260</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_delete_time'>delete_time</span><span class='lparen'>(</span><span class='id identifier rubyid_time_id'>time_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -1389,15 +1404,15 @@
       <pre class="lines">
 
 
-38
-39
 40
 41
 42
-43</pre>
+43
+44
+45</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 38</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 40</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_exists_category_name?'>exists_category_name?</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='rparen'>)</span>
     <span class='comment'>#Kolla att det inte redan finns en kategori med detta namn
@@ -1478,12 +1493,12 @@
       <pre class="lines">
 
 
-29
-30
-31</pre>
+31
+32
+33</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 29</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 31</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_exists_username?'>exists_username?</span><span class='lparen'>(</span><span class='id identifier rubyid_username'>username</span><span class='rparen'>)</span>
     <span class='kw'>return</span> <span class='id identifier rubyid_get_user_with_username'><span class='object_link'><a href="#get_user_with_username-instance_method" title="Model#get_user_with_username (method)">get_user_with_username</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_username'>username</span><span class='rparen'>)</span> <span class='op'>!=</span> <span class='kw'>nil</span>
@@ -1546,14 +1561,14 @@
       <pre class="lines">
 
 
-149
-150
 151
 152
-153</pre>
+153
+154
+155</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 149</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 151</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_all_categories'>get_all_categories</span><span class='lparen'>(</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -1638,14 +1653,14 @@
       <pre class="lines">
 
 
-310
-311
-312
 313
-314</pre>
+314
+315
+316
+317</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 310</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 313</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_all_categories_by_user_id'>get_all_categories_by_user_id</span><span class='lparen'>(</span><span class='id identifier rubyid_user_id'>user_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -1730,14 +1745,14 @@
       <pre class="lines">
 
 
-343
-344
-345
 346
-347</pre>
+347
+348
+349
+350</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 343</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 346</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_all_categories_liked_by_user'>get_all_categories_liked_by_user</span><span class='lparen'>(</span><span class='id identifier rubyid_user_id'>user_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -1822,14 +1837,14 @@
       <pre class="lines">
 
 
-321
-322
-323
 324
-325</pre>
+325
+326
+327
+328</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 321</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 324</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_all_times_by_user_id'>get_all_times_by_user_id</span><span class='lparen'>(</span><span class='id identifier rubyid_user_id'>user_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -1914,14 +1929,14 @@
       <pre class="lines">
 
 
-160
-161
 162
 163
-164</pre>
+164
+165
+166</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 160</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 162</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_all_times_from_category'>get_all_times_from_category</span><span class='lparen'>(</span><span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -2006,14 +2021,14 @@
       <pre class="lines">
 
 
-194
-195
 196
 197
-198</pre>
+198
+199
+200</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 194</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 196</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_all_users_liking_category'>get_all_users_liking_category</span><span class='lparen'>(</span><span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -2098,14 +2113,14 @@
       <pre class="lines">
 
 
-171
-172
 173
 174
-175</pre>
+175
+176
+177</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 171</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 173</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_category'>get_category</span><span class='lparen'>(</span><span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -2190,14 +2205,14 @@
       <pre class="lines">
 
 
-332
-333
-334
 335
-336</pre>
+336
+337
+338
+339</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 332</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 335</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_category_name'>get_category_name</span><span class='lparen'>(</span><span class='id identifier rubyid_id'>id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -2298,14 +2313,14 @@
       <pre class="lines">
 
 
-183
-184
 185
 186
-187</pre>
+187
+188
+189</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 183</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 185</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_rel'>get_rel</span><span class='lparen'>(</span><span class='id identifier rubyid_user_id'>user_id</span><span class='comma'>,</span> <span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -2390,14 +2405,14 @@
       <pre class="lines">
 
 
-235
-236
-237
 238
-239</pre>
+239
+240
+241
+242</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 235</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 238</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_time'>get_time</span><span class='lparen'>(</span><span class='id identifier rubyid_time_id'>time_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -2482,14 +2497,14 @@
       <pre class="lines">
 
 
-139
-140
 141
 142
-143</pre>
+143
+144
+145</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 139</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 141</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_time_user_id'>get_time_user_id</span><span class='lparen'>(</span><span class='id identifier rubyid_time_id'>time_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -2574,14 +2589,14 @@
       <pre class="lines">
 
 
-289
-290
-291
 292
-293</pre>
+293
+294
+295
+296</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 289</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 292</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_user'>get_user</span><span class='lparen'>(</span><span class='id identifier rubyid_id'>id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -2666,14 +2681,14 @@
       <pre class="lines">
 
 
-278
-279
-280
 281
-282</pre>
+282
+283
+284
+285</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 278</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 281</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_user_id_with_username'>get_user_id_with_username</span><span class='lparen'>(</span><span class='id identifier rubyid_username'>username</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -2758,14 +2773,14 @@
       <pre class="lines">
 
 
-267
-268
-269
 270
-271</pre>
+271
+272
+273
+274</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 267</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 270</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_user_with_username'>get_user_with_username</span><span class='lparen'>(</span><span class='id identifier rubyid_username'>username</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -2850,14 +2865,14 @@
       <pre class="lines">
 
 
-128
-129
 130
 131
-132</pre>
+132
+133
+134</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 128</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 130</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_get_username_with_id'>get_username_with_id</span><span class='lparen'>(</span><span class='id identifier rubyid_id'>id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -2940,13 +2955,13 @@
       <pre class="lines">
 
 
-225
-226
-227
-228</pre>
+228
+229
+230
+231</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 225</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 228</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_insert_category'>insert_category</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='comma'>,</span> <span class='id identifier rubyid_user_id'>user_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -3028,13 +3043,13 @@
       <pre class="lines">
 
 
-364
-365
-366
-367</pre>
+367
+368
+369
+370</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 364</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 367</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_insert_rel'>insert_rel</span><span class='lparen'>(</span><span class='id identifier rubyid_user_id'>user_id</span><span class='comma'>,</span> <span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -3148,13 +3163,13 @@
       <pre class="lines">
 
 
-248
-249
-250
-251</pre>
+251
+252
+253
+254</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 248</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 251</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_insert_time'>insert_time</span><span class='lparen'>(</span><span class='id identifier rubyid_time_string'>time_string</span><span class='comma'>,</span> <span class='id identifier rubyid_date'>date</span><span class='comma'>,</span> <span class='id identifier rubyid_category_id'>category_id</span><span class='comma'>,</span> <span class='id identifier rubyid_user_id'>user_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -3236,13 +3251,13 @@
       <pre class="lines">
 
 
-300
-301
-302
-303</pre>
+303
+304
+305
+306</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 300</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 303</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_insert_user'>insert_user</span><span class='lparen'>(</span><span class='id identifier rubyid_username'>username</span><span class='comma'>,</span> <span class='id identifier rubyid_password_digest'>password_digest</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -3314,15 +3329,15 @@
       <pre class="lines">
 
 
-17
-18
 19
 20
 21
-22</pre>
+22
+23
+24</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 17</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 19</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_name_accepted?'>name_accepted?</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='rparen'>)</span>
     <span class='kw'>if</span> <span class='id identifier rubyid_name'>name</span> <span class='op'>==</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_end'>&quot;</span></span> <span class='op'>||</span> <span class='id identifier rubyid_name'>name</span> <span class='op'>=~</span> <span class='tstring'><span class='regexp_beg'>/</span><span class='tstring_content'>\A\s*\Z</span><span class='regexp_end'>/</span></span>
@@ -3401,15 +3416,15 @@
       <pre class="lines">
 
 
-99
-100
 101
 102
 103
-104</pre>
+104
+105
+106</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 99</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 101</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_parsetime'>parsetime</span><span class='lparen'>(</span><span class='id identifier rubyid_time'>time</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_l'>l</span> <span class='op'>=</span> <span class='id identifier rubyid_time'>time</span><span class='period'>.</span><span class='id identifier rubyid_split'>split</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>.</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
@@ -3483,14 +3498,14 @@
       <pre class="lines">
 
 
-49
-50
 51
 52
-53</pre>
+53
+54
+55</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 49</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 51</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_password_accepted?'>password_accepted?</span><span class='lparen'>(</span><span class='id identifier rubyid_password'>password</span><span class='rparen'>)</span>
     <span class='comment'>#Se till att det finns minst 8 unika tecken
@@ -3568,8 +3583,6 @@
       <pre class="lines">
 
 
-110
-111
 112
 113
 114
@@ -3579,10 +3592,12 @@
 118
 119
 120
-121</pre>
+121
+122
+123</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 110</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 112</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_sort_times'>sort_times</span><span class='lparen'>(</span><span class='id identifier rubyid_times'>times</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_times'>times</span><span class='period'>.</span><span class='id identifier rubyid_sort!'>sort!</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_a'>a</span><span class='comma'>,</span> <span class='id identifier rubyid_b'>b</span><span class='op'>|</span>
@@ -3715,12 +3730,12 @@
       <pre class="lines">
 
 
-91
-92
-93</pre>
+93
+94
+95</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 91</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 93</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_time_to_string'>time_to_string</span><span class='lparen'>(</span><span class='id identifier rubyid_h'>h</span><span class='comma'>,</span> <span class='id identifier rubyid_m'>m</span><span class='comma'>,</span> <span class='id identifier rubyid_s'>s</span><span class='comma'>,</span> <span class='id identifier rubyid_f'>f</span><span class='rparen'>)</span>
     <span class='kw'>return</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_h'>h</span><span class='embexpr_end'>}</span><span class='tstring_content'>:</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_m'>m</span> <span class='op'>/</span> <span class='int'>10</span><span class='embexpr_end'>}</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_m'>m</span> <span class='op'>%</span> <span class='int'>10</span><span class='embexpr_end'>}</span><span class='tstring_content'>:</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_s'>s</span> <span class='op'>/</span> <span class='int'>10</span><span class='embexpr_end'>}</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_s'>s</span> <span class='op'>%</span> <span class='int'>10</span><span class='embexpr_end'>}</span><span class='tstring_content'>.</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_f'>f</span> <span class='op'>/</span> <span class='int'>10</span><span class='embexpr_end'>}</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_f'>f</span> <span class='op'>%</span> <span class='int'>10</span><span class='embexpr_end'>}</span><span class='tstring_end'>&quot;</span></span>
@@ -3801,13 +3816,13 @@
       <pre class="lines">
 
 
-205
-206
 207
-208</pre>
+208
+209
+210</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 205</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 207</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_update_category_name'>update_category_name</span><span class='lparen'>(</span><span class='id identifier rubyid_new_name'>new_name</span><span class='comma'>,</span> <span class='id identifier rubyid_category_id'>category_id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -3889,13 +3904,13 @@
       <pre class="lines">
 
 
-354
-355
-356
-357</pre>
+357
+358
+359
+360</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'model.rb', line 354</span>
+      <pre class="code"><span class="info file"># File 'model.rb', line 357</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_update_password'>update_password</span><span class='lparen'>(</span><span class='id identifier rubyid_password_digest'>password_digest</span><span class='comma'>,</span> <span class='id identifier rubyid_id'>id</span><span class='rparen'>)</span>
     <span class='id identifier rubyid_db'>db</span> <span class='op'>=</span> <span class='id identifier rubyid_connect_to_db'><span class='object_link'><a href="#connect_to_db-instance_method" title="Model#connect_to_db (method)">connect_to_db</a></span></span><span class='lparen'>(</span><span class='rparen'>)</span>
@@ -3911,7 +3926,7 @@
 </div>
 
       <div id="footer">
-  Generated on Fri Apr 23 10:20:09 2021 by
+  Generated on Fri Apr 23 10:47:32 2021 by
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.9.26 (ruby-2.7.2).
 </div>

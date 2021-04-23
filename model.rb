@@ -1,3 +1,5 @@
+# Model-delen av applikationen. Applikationen följer MVC-standarden
+# 
 module Model
 
     # Returnerar en instans av databasen
@@ -207,7 +209,7 @@ module Model
         db.execute('UPDATE Categories SET name = ? WHERE id = ?', new_name, category_id)
     end
 
-    # Radera en kategori
+    # Radera en kategori, samt alla tider och likes som hör till kategorin
     # 
     # @param [Integer] category_id id:t på kategorin som vi kollar på
     # @see Model#connect_to_db
@@ -215,6 +217,7 @@ module Model
         db = connect_to_db()
         db.execute("DELETE FROM Categories WHERE id=?", category_id)
         db.execute("DELETE FROM Times WHERE category_id = ?", category_id)
+        db.execute("DELETE FROM users_categories_rel WHERE category_id = ?", category_id)
     end
 
     # Skapa en kategori
@@ -375,5 +378,5 @@ module Model
         db = connect_to_db()
         db.execute("DELETE FROM users_categories_rel WHERE user_id = ? AND category_id = ?", user_id, category_id)
     end
-    
+
 end
