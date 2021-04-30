@@ -44,6 +44,15 @@ module Model
         return category != nil
     end
 
+    # Returnerar om ett visst användar-id är samma som ett annat användar-id, dvs om användaren är en viss användare. Med andra ord, autentiserar användaren
+    # 
+    # @param [Integer] user_id användar_id:t på personen som vi ska kontrollera autentiseringen för
+    # @param [Integer] owner_id användar_id:t som vi jämför med för att se om det verkligen är rätt person
+    # @return [Boolean]
+    def user_is_owner(user_id, owner_id)
+        return user_id == owner_id
+    end
+
     # Tar reda på om ett visst lösenordet är accepterat eller inte. (Måste vara minst 8 distinkta tecken)
     # 
     # @param [String] password lösenordet som vi ska kolla på
@@ -52,6 +61,34 @@ module Model
         #Se till att det finns minst 8 unika tecken
         unique_length = password.split("").uniq.length
         return unique_length >= 8
+    end
+
+    # Krypterar ett lösenord (Låt BCrypt hasha + salta lösenordet)
+    # 
+    # @param [String] password det okrypterade lösenordet
+    # @return [String] det krypterade lösenordet
+    def encrypt_password(password)
+        return BCrypt::Password.create(password)
+    end
+
+    # Kontrollerar att ett lösenord stämmer överens med ett sparat (och krypterat) lösenord
+    # 
+    # @param [String] password_digest det sparade krypterade lösenordet
+    # @param [String] password_input okrypterade inskrivna lösenordet
+    # @return [Boolean]
+    def correct_password?(password_digest, password_input)
+        #Låt BCrypt hantera det krypterade lösenordet så att vi kan jämföra det sedan
+        #Om det inskrivna lösenordet stämmer överens med BCrypts beräknade jämförelsebara värde
+        return BCrypt::Password.new(password_digest) == password_input
+    end
+
+    # Kontrollerar att två inskrivna lösenord är samma (t.ex. vid registrering)
+    # 
+    # @param [String] password1 det ena lösenordet
+    # @param [String] password2 det andra lösenordet
+    # @return [Boolean]
+    def same_password(password1, password2)
+        return password1 == password2
     end
 
     # Kollar om en viss tid är accepterad eller inte
@@ -82,6 +119,8 @@ module Model
             return
         end
     end
+
+
 
     # Formaterar en sträng som visar en tid på formatet hh:mm:ss:ff
     # 

@@ -132,7 +132,7 @@ get('/categories/:id/edit') do
     owner_id = category["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
-    if user_id != owner_id
+    if !user_is_owner(user_id, owner_id)
         display_information("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorin", "/categories/#{category_id}")
     else
         slim(:"categories/edit", locals: {category: category})
@@ -160,7 +160,7 @@ post('/categories/:id/update') do
     owner_id = category["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som kan ändra namnet på den
-    if user_id != owner_id
+    if !user_is_owner(user_id, owner_id)
         display_information("Du är inte skaparen av denna kategorin. Du kan inte ändra namn på en kategori som någon annan äger", "Tillbaka till kategorier", "/categories/#{category_id}")
     end
     
@@ -205,7 +205,7 @@ post('/categories/:id/delete') do
     owner_id = category["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna kategorin som får radera den
-    if user_id != owner_id
+    if !user_is_owner(user_id, owner_id)
         display_information("Du är inte skaparen av denna kategorin. Du kan inte radera en kategori som någon annan äger", "Tillbaka till kategorier", "/categories/#{category_id}")
     else
         #Vi raderar kategorin, samt alla tider som hör till denna kategorin
@@ -354,7 +354,7 @@ post('/times/:category_id/:time_id/delete') do
     owner_id = get_time_user_id(time_id)["user_id"]
 
     #Det är naturligtvis bara den som skapat (äger) denna tiden som får radera den
-    if user_id != owner_id
+    if !user_is_owner(user_id, owner_id)
         display_information("Du är inte skaparen av denna tiden. Du kan inte radera en tid som tillhör någon annan", "Tillbaka till tiden", "/times/#{category_id}/#{time_id}")
     else
         #Vi raderar tiden
@@ -395,9 +395,8 @@ post('/login') do
         #Det lagrade krypterade lösenordet för användaren
         password_digest = user["pw_digest"]
 
-        #Låt BCrypt hantera det krypterade lösenordet så att vi kan jämföra det sedan
-        #Om det inskrivna lösenordet stämmer överens med BCrypts beräknade jämförelsebara värde
-        if BCrypt::Password.new(password_digest) == password_input
+        #Kontrollera att lösenordet var rätt
+        if correct_password?(password_digest, password_input)
 
             #Hämta användar-id hos usern
             user_id = user["id"]
@@ -455,7 +454,9 @@ post('/users') do
 
     #Om det inte fanns någon användare med detta användarnamnet redan
     if !exists_username?(username_input)
-        if password_input == password_confirm_input
+        
+        #Se till att det bekräftade lösenordet är samma
+        if same_password(password_input, password_confirm_input)
 
             #Kontrollera att användarnamnet är accepterat
             if !name_accepted?(username_input)
@@ -467,8 +468,8 @@ post('/users') do
                 display_information("Ditt lösenord måste bestå av minst 8 distinkta tecken", "Prova igen", "/users/new")
             end
 
-            #Låt BCrypt hasha + salta lösenordet
-            password_digest = BCrypt::Password.create(password_input)
+            #Kryptera lösenordet
+            password_digest = encrypt_password(password_input)
 
             insert_user(username_input, password_digest)
             
@@ -558,20 +559,23 @@ post('/users/:id/update') do
         new_password_input = params[:new_password]
         confirm_new_password_input = params[:confirm_new_password]
 
+        #Kontrollera att det nya lösenordet är accepterat
+        if !password_accepted?(new_password_input)
+            display_information("Ditt lösenord måste bestå av minst 8 distinkta tecken", "Prova igen", "/users/#{profile_user_id}/show")
+        end
+
         #Hämta det krypterade lösenordet från användaren
         user = get_user(user_id)
 
         #Det lagrade krypterade lösenordet för användaren
         password_digest = user["pw_digest"]
 
-        #Låt BCrypt hantera det krypterade lösenordet så att vi kan jämföra det sedan
-        #Om det inskrivna lösenordet stämmer överens med BCrypts beräknade jämförelsebara värde
-        if BCrypt::Password.new(password_digest) == current_password_input
-
-            if new_password_input == confirm_new_password_input
-
-                #Låt BCrypt hasha + salta det nya lösenordet
-                password_digest = BCrypt::Password.create(new_password_input)
+        #Kontrollera att lösenordet var rätt
+        if correct_password?(password_digest, current_password_input)
+            #Kontrollera att lösenordet stämmer överens med det bekräftade lösenordet
+            if same_password(new_password_input, confirm_new_password_input)
+                #Kryptera det nya lösenordet
+                password_digest = encrypt_password(new_password_input)
                 
                 #Uppdatera det nya lösenordet i databasen
                 update_password(password_digest, session[:user_id])
@@ -621,8 +625,6 @@ post('/likes/:user_id/:category_id') do
     end
     redirect("/categories/#{category_id}")
 end
-
-
 
 # Hämta användar-id:t hos den inloggade användaren (från sessions)
 # 
