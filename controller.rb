@@ -97,7 +97,7 @@ get('/categories/:id') do
     end
 
     #Se om personen är inloggad
-    user_id = session[:user_id]
+    user_id = get_user_id()
     does_like = false
     if user_id != nil
         #Se om den här användaren gillar denna kategorin eller inte
@@ -402,10 +402,10 @@ post('/login') do
             user_id = user["id"]
 
             #Spara användar-id i sessions så att användaren kan fortsätta vara inloggad medan hen besöker hemsidan
-            session[:user_id] = user_id
+            store_user_id(user_id)
 
             #Spara användarnamnet i sessions också så att vi lätt kan komma åt det
-            session[:username] = username_input
+            store_username(username_input)
 
             #Informera användaren att hen är inloggad
             display_information("Välkommen tillbaka #{username_input}! Du är nu inloggad.", "Ta mig till startsidan", "/")
@@ -421,8 +421,7 @@ end
 # Loggar ut användaren
 #
 get('/logout') do
-    session[:user_id] = nil
-    session[:username] = nil
+    reset_session()
     slim(:"auth/logout")
 end
 
@@ -438,7 +437,10 @@ end
 # @param [String] :password_input användarens inskrivna lösenord
 # @param [String] :password_confirm_input användarens inskrivna bekräftade lösenord
 # @see Model#exists_username?
+# @see Model#same_password
 # @see Model#name_accepted?
+# @see Model#password_accepted?
+# @see Model#encrypt_password
 # @see display_information
 # @see Model#insert_user
 # @see Model#get_user_id_with_username
@@ -475,8 +477,8 @@ post('/users') do
             
             #Hitta användarens id från databasen och spara det i session
             user_id = get_user_id_with_username(username_input)["id"]
-            session[:user_id] = user_id
-            session[:username] = username_input
+            store_user_id(user_id)
+            store_username(username_input)
 
             display_information("Hej #{username_input}! Du har nu registrerat dig!", "Ta mig till startsidan", "/")
         else
@@ -548,7 +550,7 @@ post('/users/:id/update') do
     profile_user_id = params[:id].to_i
 
     #Hämta användar-id:t
-    user_id = session[:user_id]
+    user_id = get_user_id()
 
     #Om dessa inte stämmer överens har inte användaren authorization för att ändra lösenord
     if profile_user_id != user_id || user_id == nil
@@ -578,7 +580,7 @@ post('/users/:id/update') do
                 password_digest = encrypt_password(new_password_input)
                 
                 #Uppdatera det nya lösenordet i databasen
-                update_password(password_digest, session[:user_id])
+                update_password(password_digest, get_user_id())
 
                 #Informera användaren att hen har bytt lösenord
                 display_information("Du har nu ändrat lösenordet.", "Tillbaka", "/users/#{user_id}/show")
@@ -604,7 +606,7 @@ end
 # @see Model#insert_rel
 post('/likes/:user_id/:category_id') do
     #Om användaren inte är inloggad än
-    if session[:user_id] == nil
+    if get_user_id() == nil
         display_information("Du måste vara inloggad för att göra detta.", "Logga in", "/login")
     end
 
@@ -634,10 +636,11 @@ end
 
 # Ser till att användaren är inloggad, annars visas meddelande
 #
+# @see get_user_id
 # @see display_information
 def confirm_logged_in()
-    if session[:user_id] == nil
-        display_information("Du är inte inloggad, logga in eller registrera dig för att kunna göra detta", "Hem", "/login")
+    if get_user_id() == nil
+        display_information("Du är inte inloggad, logga in eller registrera dig för att kunna göra detta", "Logga in", "/login")
     end
 end
 
@@ -645,4 +648,22 @@ end
 # 
 def get_form_time_info()
     return [params[:hours], params[:minutes], params[:seconds], params[:fractions].to_i].map(&:to_i)
+end
+
+# Sparar ett user-id i session
+# 
+def store_user_id(user_id)
+    session[:user_id] = user_id
+end
+
+# Sparar ett användarnamn i session
+# 
+def store_username(username)
+    session[:username] = username
+end
+
+# Nollställer session
+# 
+def reset_session()
+    session.clear
 end
