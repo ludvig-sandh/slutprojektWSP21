@@ -647,7 +647,7 @@ end
 # Hämtar tids-datan från formuläret där man skickar in tider
 # 
 def get_form_time_info()
-    return [params[:hours], params[:minutes], params[:seconds], params[:fractions].to_i].map(&:to_i)
+    return [params[:hours], params[:minutes], params[:seconds], params[:fractions]].map(&:to_i)
 end
 
 # Sparar ett user-id i session
